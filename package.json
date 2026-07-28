@@ -1,0 +1,15 @@
+{
+  "name": "lego-search",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Lego price search aggregator for Shopee, MOMO, PChome, and Coupang Taiwan.",
+  "scripts": {
+    "start": "node server/index.mjs",
+    "dev": "node --watch server/index.mjs",
+    "check": "node --check server/index.mjs && node --check server/cache.mjs && node --check server/platforms.mjs && node --check server/scrape.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

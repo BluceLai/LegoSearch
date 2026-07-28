@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LegoSearch</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="search-panel" aria-labelledby="app-title">
+        <div>
+          <p class="eyebrow">LEGO Price Finder</p>
+          <h1 id="app-title">LegoSearch</h1>
+        </div>
+
+        <form id="search-form" class="search-form">
+          <label class="search-box">
+            <span>搜尋關鍵字</span>
+            <input id="query" name="query" type="search" placeholder="例如 LEGO 10305、樂高 75367" autocomplete="off" required />
+          </label>
+
+          <div class="platforms" id="platforms" aria-label="選擇平台"></div>
+
+          <div class="actions">
+            <button class="primary-button" type="submit">搜尋價格</button>
+            <button class="ghost-button" type="button" id="refresh-button">略過快取</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="toolbar" aria-label="結果工具列">
+        <div>
+          <strong id="result-count">尚未搜尋</strong>
+          <span id="status-text">輸入樂高型號或關鍵字開始比價。</span>
+        </div>
+        <label class="sort-control">
+          <span>排序</span>
+          <select id="sort">
+            <option value="price-asc">價格低到高</option>
+            <option value="price-desc">價格高到低</option>
+            <option value="platform">平台</option>
+          </select>
+        </label>
+      </section>
+
+      <section id="notice" class="notice" hidden></section>
+      <section id="results" class="results" aria-live="polite"></section>
+    </main>
+
+    <template id="result-template">
+      <article class="result-card">
+        <div class="image-wrap">
+          <img alt="" loading="lazy" />
+          <div class="image-placeholder">LEGO</div>
+        </div>
+        <div class="result-body">
+          <div class="result-meta">
+            <span class="platform"></span>
+            <span class="source"></span>
+          </div>
+          <h2></h2>
+          <p class="seller"></p>
+          <div class="price-row">
+            <strong class="price"></strong>
+            <span class="original-price"></span>
+          </div>
+          <p class="notice-text"></p>
+          <div class="card-footer">
+            <time></time>
+            <a class="open-link" target="_blank" rel="noreferrer">開啟商品</a>
+          </div>
+        </div>
+      </article>
+    </template>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>
