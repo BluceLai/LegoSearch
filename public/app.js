@@ -3,6 +3,7 @@ const queryInput = document.querySelector("#query");
 const platformsNode = document.querySelector("#platforms");
 const resultsNode = document.querySelector("#results");
 const alertsNode = document.querySelector("#alerts");
+const openInstructions = document.querySelector("#open-instructions");
 const summaryTitle = document.querySelector("#summary-title");
 const summaryDetail = document.querySelector("#summary-detail");
 const sortSelect = document.querySelector("#sort");
@@ -16,25 +17,6 @@ const money = new Intl.NumberFormat("zh-TW", {
   maximumFractionDigits: 0
 });
 
-await boot();
-
-async function boot() {
-  const response = await fetch("/api/platforms");
-  const { platforms } = await response.json();
-
-  platformsNode.replaceChildren(...platforms.map((platform) => {
-    const label = document.createElement("label");
-    label.className = "platform-choice";
-    label.innerHTML = `
-      <input type="checkbox" value="${platform.id}" checked />
-      <span>${platform.name}</span>
-    `;
-    return label;
-  }));
-
-  renderEmpty("\u53ef\u4ee5\u958b\u59cb\u641c\u5c0b\u3002");
-}
-
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   await search();
@@ -42,10 +24,50 @@ form.addEventListener("submit", async (event) => {
 
 sortSelect.addEventListener("change", renderResults);
 
+await boot();
+
+async function boot() {
+  if (window.location.protocol === "file:") {
+    showStartupError("\u8acb\u7528 start-legosearch.bat \u555f\u52d5\uff0c\u518d\u958b\u555f http://localhost:5178\u3002\u76f4\u63a5\u958b\u555f HTML \u6a94\u4e0d\u80fd\u641c\u5c0b\u3002");
+    return;
+  }
+
+  try {
+    const response = await fetch("/api/platforms");
+    if (!response.ok) {
+      throw new Error("\u5e73\u53f0\u8cc7\u6599\u8f09\u5165\u5931\u6557\u3002");
+    }
+
+    const { platforms } = await response.json();
+
+    platformsNode.replaceChildren(...platforms.map((platform) => {
+      const label = document.createElement("label");
+      const input = document.createElement("input");
+      const name = document.createElement("span");
+      label.className = "platform-choice";
+      input.type = "checkbox";
+      input.value = platform.id;
+      input.checked = true;
+      name.textContent = platform.name;
+      label.append(input, name);
+      return label;
+    }));
+
+    renderEmpty("\u53ef\u4ee5\u958b\u59cb\u641c\u5c0b\u3002");
+  } catch {
+    showStartupError("\u7121\u6cd5\u9023\u4e0a LegoSearch \u670d\u52d9\u3002\u8acb\u57f7\u884c start-legosearch.bat \u5f8c\u91cd\u65b0\u6574\u7406\u3002");
+  }
+}
+
 async function search() {
   const platformIds = [...platformsNode.querySelectorAll("input:checked")]
     .map((input) => input.value)
     .join(",");
+
+  if (!platformIds) {
+    showStartupError("\u5e73\u53f0\u5c1a\u672a\u8f09\u5165\u3002\u8acb\u6aa2\u67e5 LegoSearch \u670d\u52d9\u662f\u5426\u5df2\u555f\u52d5\u3002");
+    return;
+  }
 
   const params = new URLSearchParams({
     q: queryInput.value,
@@ -82,6 +104,16 @@ async function search() {
     summaryDetail.textContent = error.message;
     renderEmpty("\u6c92\u6709\u53ef\u986f\u793a\u7684\u7d50\u679c\u3002");
   }
+}
+
+function showStartupError(message) {
+  results = [];
+  summaryTitle.textContent = "\u7121\u6cd5\u958b\u59cb\u641c\u5c0b";
+  summaryDetail.textContent = message;
+  openInstructions.hidden = false;
+  openInstructions.textContent = message;
+  alertsNode.hidden = true;
+  renderEmpty(message);
 }
 
 function renderResults() {
