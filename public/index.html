@@ -1,79 +1,72 @@
 <!doctype html>
 <html lang="zh-Hant">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>LegoSearch</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <main class="app-shell">
-      <section class="search-panel" aria-labelledby="app-title">
+    <main class="workspace">
+      <section class="query-strip">
         <div>
-          <p class="eyebrow">LEGO Price Finder</p>
-          <h1 id="app-title">LegoSearch</h1>
+          <p class="kicker">&#x53f0;&#x7063;&#x96fb;&#x5546;&#x50f9;&#x683c;&#x641c;&#x5c0b;</p>
+          <h1>LegoSearch</h1>
         </div>
 
         <form id="search-form" class="search-form">
-          <label class="search-box">
-            <span>搜尋關鍵字</span>
-            <input id="query" name="query" type="search" placeholder="例如 LEGO 10305、樂高 75367" autocomplete="off" required />
+          <label class="field">
+            <span>&#x95dc;&#x9375;&#x5b57;&#x6216;&#x578b;&#x865f;</span>
+            <input id="query" type="search" value="LEGO 10305" autocomplete="off" />
           </label>
 
-          <div class="platforms" id="platforms" aria-label="選擇平台"></div>
+          <div id="platforms" class="platform-grid"></div>
 
-          <div class="actions">
-            <button class="primary-button" type="submit">搜尋價格</button>
-            <button class="ghost-button" type="button" id="refresh-button">略過快取</button>
-          </div>
+          <button type="submit">&#x641c;&#x5c0b;&#x50f9;&#x683c;</button>
         </form>
       </section>
 
-      <section class="toolbar" aria-label="結果工具列">
+      <section class="summary-bar">
         <div>
-          <strong id="result-count">尚未搜尋</strong>
-          <span id="status-text">輸入樂高型號或關鍵字開始比價。</span>
+          <strong id="summary-title">&#x5c31;&#x7dd2;</strong>
+          <span id="summary-detail">&#x9078;&#x64c7;&#x5e73;&#x53f0;&#xff0c;&#x8f38;&#x5165;&#x6a02;&#x9ad8;&#x95dc;&#x9375;&#x5b57;&#x958b;&#x59cb;&#x6bd4;&#x50f9;&#x3002;</span>
         </div>
-        <label class="sort-control">
-          <span>排序</span>
+        <label class="field compact">
+          <span>&#x6392;&#x5e8f;</span>
           <select id="sort">
-            <option value="price-asc">價格低到高</option>
-            <option value="price-desc">價格高到低</option>
-            <option value="platform">平台</option>
+            <option value="price-asc">&#x50f9;&#x683c;&#x4f4e;&#x5230;&#x9ad8;</option>
+            <option value="price-desc">&#x50f9;&#x683c;&#x9ad8;&#x5230;&#x4f4e;</option>
+            <option value="platform">&#x5e73;&#x53f0;</option>
           </select>
         </label>
       </section>
 
-      <section id="notice" class="notice" hidden></section>
-      <section id="results" class="results" aria-live="polite"></section>
+      <section id="alerts" class="alerts" hidden></section>
+      <section id="results" class="results"></section>
     </main>
 
-    <template id="result-template">
+    <template id="result-card-template">
       <article class="result-card">
-        <div class="image-wrap">
+        <div class="media">
           <img alt="" loading="lazy" />
-          <div class="image-placeholder">LEGO</div>
+          <span>LEGO</span>
         </div>
-        <div class="result-body">
-          <div class="result-meta">
+        <div class="content">
+          <div class="meta">
             <span class="platform"></span>
             <span class="source"></span>
           </div>
           <h2></h2>
-          <p class="seller"></p>
-          <div class="price-row">
-            <strong class="price"></strong>
-            <span class="original-price"></span>
-          </div>
-          <p class="notice-text"></p>
-          <div class="card-footer">
+          <p class="notice"></p>
+          <strong class="price"></strong>
+          <div class="footer">
             <time></time>
-            <a class="open-link" target="_blank" rel="noreferrer">開啟商品</a>
+            <a target="_blank" rel="noreferrer">Open</a>
           </div>
         </div>
       </article>
     </template>
 
-    <script src="/app.js" type="module"></script>
+    <script type="module" src="/app.js"></script>
   </body>
 </html>

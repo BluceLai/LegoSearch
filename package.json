@@ -3,11 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Lego price search aggregator for Shopee, MOMO, PChome, and Coupang Taiwan.",
+  "description": "Local Lego price discovery tool for Taiwan marketplaces.",
   "scripts": {
-    "start": "node server/index.mjs",
-    "dev": "node --watch server/index.mjs",
-    "check": "node --check server/index.mjs && node --check server/cache.mjs && node --check server/platforms.mjs && node --check server/scrape.mjs"
+    "start": "node src/http/server.mjs",
+    "dev": "node --watch src/http/server.mjs",
+    "test": "node tests/all.test.mjs",
+    "check": "npm test && node --check src/http/server.mjs && node --check tools/legoctl.mjs"
   },
   "engines": {
     "node": ">=22"

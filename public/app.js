@@ -1,113 +1,150 @@
 const form = document.querySelector("#search-form");
 const queryInput = document.querySelector("#query");
-const platformsEl = document.querySelector("#platforms");
-const resultsEl = document.querySelector("#results");
-const resultCountEl = document.querySelector("#result-count");
-const statusTextEl = document.querySelector("#status-text");
-const noticeEl = document.querySelector("#notice");
-const sortEl = document.querySelector("#sort");
-const refreshButton = document.querySelector("#refresh-button");
-const template = document.querySelector("#result-template");
+const platformsNode = document.querySelector("#platforms");
+const resultsNode = document.querySelector("#results");
+const alertsNode = document.querySelector("#alerts");
+const summaryTitle = document.querySelector("#summary-title");
+const summaryDetail = document.querySelector("#summary-detail");
+const sortSelect = document.querySelector("#sort");
+const template = document.querySelector("#result-card-template");
 
-let currentResults = [];
-let refreshNext = false;
+let results = [];
 
-const currency = new Intl.NumberFormat("zh-TW", {
+const money = new Intl.NumberFormat("zh-TW", {
   style: "currency",
   currency: "TWD",
   maximumFractionDigits: 0
 });
 
-async function loadPlatforms() {
-  const response = await fetch("/api/platforms");
-  const data = await response.json();
+await boot();
 
-  platformsEl.innerHTML = "";
-  for (const platform of data.platforms) {
+async function boot() {
+  const response = await fetch("/api/platforms");
+  const { platforms } = await response.json();
+
+  platformsNode.replaceChildren(...platforms.map((platform) => {
     const label = document.createElement("label");
-    label.className = "platform-toggle";
+    label.className = "platform-choice";
     label.innerHTML = `
-      <input type="checkbox" name="platform" value="${platform.id}" checked />
+      <input type="checkbox" value="${platform.id}" checked />
       <span>${platform.name}</span>
     `;
-    platformsEl.append(label);
-  }
+    return label;
+  }));
+
+  renderEmpty("\u53ef\u4ee5\u958b\u59cb\u641c\u5c0b\u3002");
 }
 
-function selectedPlatforms() {
-  return [...document.querySelectorAll("input[name='platform']:checked")]
-    .map((input) => input.value);
-}
+form.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  await search();
+});
 
-function sortResults(results) {
-  const sorted = [...results];
+sortSelect.addEventListener("change", renderResults);
 
-  if (sortEl.value === "price-desc") {
-    sorted.sort((a, b) => (b.price ?? -1) - (a.price ?? -1));
-  } else if (sortEl.value === "platform") {
-    sorted.sort((a, b) => a.platform.localeCompare(b.platform, "zh-Hant"));
-  } else {
-    sorted.sort((a, b) => {
-      if (a.price === null && b.price === null) return 0;
-      if (a.price === null) return 1;
-      if (b.price === null) return -1;
-      return a.price - b.price;
-    });
+async function search() {
+  const platformIds = [...platformsNode.querySelectorAll("input:checked")]
+    .map((input) => input.value)
+    .join(",");
+
+  const params = new URLSearchParams({
+    q: queryInput.value,
+    platforms: platformIds
+  });
+
+  summaryTitle.textContent = "\u641c\u5c0b\u4e2d";
+  summaryDetail.textContent = "\u6b63\u5728\u67e5\u8a62\u5404\u5e73\u53f0\u50f9\u683c...";
+  alertsNode.hidden = true;
+  renderEmpty("\u641c\u5c0b\u4e2d\uff0c\u8acb\u7a0d\u5019\u3002");
+
+  try {
+    const response = await fetch(`/api/search?${params}`);
+    const body = await response.json();
+
+    if (!response.ok) {
+      throw new Error(body.error || "\u641c\u5c0b\u5931\u6557\u3002");
+    }
+
+    results = body.results || [];
+    const priced = results.filter((item) => item.price !== null).length;
+    summaryTitle.textContent = `${results.length} \u7b46\u7d50\u679c`;
+    summaryDetail.textContent = `${priced} \u7b46\u542b\u89e3\u6790\u50f9\u683c\u3002\u5e73\u53f0\u64cb\u4e0b\u81ea\u52d5\u64f7\u53d6\u6642\u6703\u4fdd\u7559\u641c\u5c0b\u9023\u7d50\u3002`;
+
+    if (body.errors?.length) {
+      alertsNode.hidden = false;
+      alertsNode.textContent = body.errors.map((error) => `${error.platformName}: ${error.message}`).join(" / ");
+    }
+
+    renderResults();
+  } catch (error) {
+    results = [];
+    summaryTitle.textContent = "\u641c\u5c0b\u5931\u6557";
+    summaryDetail.textContent = error.message;
+    renderEmpty("\u6c92\u6709\u53ef\u986f\u793a\u7684\u7d50\u679c\u3002");
   }
-
-  return sorted;
 }
 
 function renderResults() {
-  resultsEl.innerHTML = "";
-  noticeEl.hidden = true;
+  const sorted = [...results].sort((a, b) => {
+    if (sortSelect.value === "platform") {
+      return a.platformName.localeCompare(b.platformName, "zh-Hant");
+    }
 
-  const sorted = sortResults(currentResults);
+    if (a.price === null && b.price === null) return 0;
+    if (a.price === null) return 1;
+    if (b.price === null) return -1;
+
+    return sortSelect.value === "price-desc" ? b.price - a.price : a.price - b.price;
+  });
+
   if (!sorted.length) {
-    resultsEl.innerHTML = `<div class="empty-state">目前沒有結果。</div>`;
+    renderEmpty("\u6c92\u6709\u53ef\u986f\u793a\u7684\u7d50\u679c\u3002");
     return;
   }
 
-  for (const item of sorted) {
-    const node = template.content.cloneNode(true);
-    const card = node.querySelector(".result-card");
-    const image = node.querySelector("img");
-    const title = node.querySelector("h2");
-    const platform = node.querySelector(".platform");
-    const source = node.querySelector(".source");
-    const seller = node.querySelector(".seller");
-    const price = node.querySelector(".price");
-    const originalPrice = node.querySelector(".original-price");
-    const notice = node.querySelector(".notice-text");
-    const time = node.querySelector("time");
-    const link = node.querySelector(".open-link");
-
-    if (item.image) {
-      image.src = item.image;
-    }
-
-    card.dataset.platform = item.platformId;
-    title.textContent = item.title;
-    platform.textContent = item.platform;
-    source.textContent = item.source;
-    seller.textContent = item.seller || " ";
-    price.textContent = item.price ? currency.format(item.price) : "待確認";
-    originalPrice.textContent = item.originalPrice ? currency.format(item.originalPrice) : "";
-    notice.textContent = item.notice || "";
-    time.dateTime = item.fetchedAt;
-    time.textContent = formatTime(item.fetchedAt);
-    link.href = item.url;
-    link.textContent = item.price ? "開啟商品" : "前往搜尋";
-
-    resultsEl.append(node);
-  }
+  resultsNode.replaceChildren(...sorted.map(renderCard));
 }
 
-function formatTime(value) {
-  if (!value) {
-    return "";
+function renderCard(item) {
+  const node = template.content.cloneNode(true);
+  const image = node.querySelector("img");
+  const imageFallback = node.querySelector(".media span");
+  const platform = node.querySelector(".platform");
+  const source = node.querySelector(".source");
+  const title = node.querySelector("h2");
+  const notice = node.querySelector(".notice");
+  const price = node.querySelector(".price");
+  const time = node.querySelector("time");
+  const link = node.querySelector("a");
+
+  if (item.imageUrl) {
+    image.src = item.imageUrl;
+    imageFallback.hidden = true;
+  } else {
+    image.remove();
   }
 
+  platform.textContent = item.platformName;
+  source.textContent = item.source === "marketplace" ? "\u5df2\u89e3\u6790" : "\u641c\u5c0b\u9023\u7d50";
+  title.textContent = item.title;
+  notice.textContent = item.notice || "";
+  price.textContent = item.price === null ? "\u958b\u555f\u5e73\u53f0\u78ba\u8a8d" : money.format(item.price);
+  time.dateTime = item.fetchedAt;
+  time.textContent = formatDate(item.fetchedAt);
+  link.href = item.url;
+  link.textContent = item.price === null ? "\u641c\u5c0b" : "\u67e5\u770b";
+
+  return node;
+}
+
+function renderEmpty(message) {
+  const empty = document.createElement("div");
+  empty.className = "empty";
+  empty.textContent = message;
+  resultsNode.replaceChildren(empty);
+}
+
+function formatDate(value) {
   return new Intl.DateTimeFormat("zh-TW", {
     month: "2-digit",
     day: "2-digit",
@@ -115,73 +152,3 @@ function formatTime(value) {
     minute: "2-digit"
   }).format(new Date(value));
 }
-
-async function search(refresh = false) {
-  const query = queryInput.value.trim();
-  const platforms = selectedPlatforms();
-
-  if (!query || !platforms.length) {
-    noticeEl.hidden = false;
-    noticeEl.textContent = "請輸入關鍵字並至少選擇一個平台。";
-    return;
-  }
-
-  resultCountEl.textContent = "搜尋中";
-  statusTextEl.textContent = "正在查詢各平台價格...";
-  resultsEl.innerHTML = `<div class="empty-state">查詢中，請稍候。</div>`;
-  noticeEl.hidden = true;
-
-  const params = new URLSearchParams({
-    q: query,
-    platforms: platforms.join(",")
-  });
-
-  if (refresh) {
-    params.set("refresh", "1");
-  }
-
-  try {
-    const response = await fetch(`/api/search?${params}`);
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || "搜尋失敗");
-    }
-
-    currentResults = data.results || [];
-    const pricedCount = currentResults.filter((item) => item.price).length;
-    resultCountEl.textContent = `${currentResults.length} 筆結果`;
-    statusTextEl.textContent = data.cached
-      ? `使用快取，${pricedCount} 筆含價格。`
-      : `已更新，${pricedCount} 筆含價格。`;
-
-    if (data.errors?.length) {
-      noticeEl.hidden = false;
-      noticeEl.textContent = data.errors
-        .map((error) => `${error.platform}: ${error.message}`)
-        .join(" / ");
-    }
-
-    renderResults();
-  } catch (error) {
-    currentResults = [];
-    resultCountEl.textContent = "搜尋失敗";
-    statusTextEl.textContent = error.message;
-    resultsEl.innerHTML = `<div class="empty-state">無法取得搜尋結果。</div>`;
-  }
-}
-
-form.addEventListener("submit", (event) => {
-  event.preventDefault();
-  search(refreshNext);
-  refreshNext = false;
-});
-
-refreshButton.addEventListener("click", () => {
-  refreshNext = true;
-  search(true);
-});
-
-sortEl.addEventListener("change", renderResults);
-
-loadPlatforms();
