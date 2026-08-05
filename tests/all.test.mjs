@@ -1,9 +1,12 @@
 import "./search-query.test.mjs";
+import "./server-lifecycle.test.mjs";
 import "./platform-catalog.test.mjs";
 import "./search-aggregator.test.mjs";
 import "./official-lego-set-resolver.test.mjs";
 import "./browser-marketplace-clients.test.mjs";
+import "./desktop-packaging.test.mjs";
 import "./iopen-verifier.test.mjs";
 import "./result-organization.test.mjs";
+import "./release-artifacts.test.mjs";
 import "./ui-entrypoint.test.mjs";
 import "./http-service.test.mjs";

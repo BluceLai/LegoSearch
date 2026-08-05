@@ -1,5 +1,5 @@
 import { createServer } from "node:http";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createSearchAggregator } from "../domain/search-aggregator.mjs";
 import { createBrowserMarketplaceClients } from "../infrastructure/browser-marketplace-clients.mjs";
@@ -10,24 +10,45 @@ import { createRequestHandler } from "./app.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const publicDir = join(__dirname, "..", "..", "public");
-const port = Number(readOption("port") || process.env.PORT || 5178);
 
-const aggregator = createSearchAggregator({
-  clients: createMarketplaceClients({
-    browserClients: createBrowserMarketplaceClients()
-  }),
-  resolveLegoSet: createOfficialLegoSetResolver()
-});
+export async function startLegoSearchServer({ port = 5178, host = "127.0.0.1" } = {}) {
+  const server = createLegoSearchServer();
 
-const server = createServer(createRequestHandler({
-  aggregator,
-  publicDir,
-  iopenVerifier: createIopenVerificationLauncher()
-}));
+  await new Promise((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(port, host, () => {
+      server.off("error", reject);
+      resolve();
+    });
+  });
 
-server.listen(port, () => {
-  console.log(`LegoSearch running at http://localhost:${port}`);
-});
+  const address = server.address();
+  return {
+    server,
+    port: typeof address === "object" && address ? address.port : port
+  };
+}
+
+export function createLegoSearchServer() {
+  const aggregator = createSearchAggregator({
+    clients: createMarketplaceClients({
+      browserClients: createBrowserMarketplaceClients()
+    }),
+    resolveLegoSet: createOfficialLegoSetResolver()
+  });
+
+  return createServer(createRequestHandler({
+    aggregator,
+    publicDir,
+    iopenVerifier: createIopenVerificationLauncher()
+  }));
+}
+
+if (isDirectRun()) {
+  const port = Number(readOption("port") ?? process.env.PORT ?? 5178);
+  const running = await startLegoSearchServer({ port });
+  console.log(`LegoSearch running at http://localhost:${running.port}`);
+}
 
 function readOption(name) {
   const inline = process.argv.find((arg) => arg.startsWith(`--${name}=`));
@@ -37,4 +58,8 @@ function readOption(name) {
 
   const index = process.argv.indexOf(`--${name}`);
   return index >= 0 ? process.argv[index + 1] : null;
+}
+
+function isDirectRun() {
+  return Boolean(process.argv[1]) && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 }

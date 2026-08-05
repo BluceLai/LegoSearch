@@ -51,6 +51,19 @@ npm test
 npm run check
 ```
 
+## Version And Release
+
+This project follows Semantic Versioning. Choose the appropriate increment, then build the portable Windows release:
+
+```powershell
+npm run version:patch
+npm run version:minor
+npm run version:major
+npm run release:win
+```
+
+The release flow creates `dist/LegoSearch_vX.Y.Z/` and `dist/LegoSearch_vX.Y.Z.zip`, plus `dist/lego-search-source.zip`. Previous releases move to `dist/archive/`.
+
 ## Project Shape
 
 ```text

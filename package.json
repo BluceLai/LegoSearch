@@ -1,19 +1,53 @@
 {
   "name": "lego-search",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
+  "main": "desktop/main.mjs",
   "description": "Local Lego price discovery tool for Taiwan marketplaces.",
+  "author": "BluceLai",
   "scripts": {
     "start": "node src/http/server.mjs",
     "dev": "node --watch src/http/server.mjs",
+    "desktop": "electron .",
+    "package:source": "node tools/build-source-archive.mjs",
+    "package:win": "node tools/build-release.mjs",
+    "release:win": "npm run check && npm run package:source && npm run package:win",
+    "version:patch": "npm version patch --no-git-tag-version",
+    "version:minor": "npm version minor --no-git-tag-version",
+    "version:major": "npm version major --no-git-tag-version",
     "test": "node tests/all.test.mjs",
-    "check": "npm test && node --check src/http/server.mjs && node --check tools/legoctl.mjs"
+    "check": "npm test && node --check desktop/main.mjs && node --check src/http/server.mjs && node --check tools/build-release.mjs && node --check tools/build-source-archive.mjs && node --check tools/legoctl.mjs"
   },
   "engines": {
     "node": ">=22"
   },
   "dependencies": {
     "playwright-core": "^1.62.1"
+  },
+  "build": {
+    "appId": "tw.bluce.legosearch",
+    "productName": "LegoSearch",
+    "asar": true,
+    "files": [
+      "src/**/*",
+      "public/**/*",
+      "desktop/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "portable"
+      ],
+      "artifactName": "${productName}-${version}-portable.${ext}"
+    },
+    "directories": {
+      "output": "dist"
+    }
+  },
+  "devDependencies": {
+    "archiver": "^8.0.0",
+    "electron": "^43.3.0",
+    "electron-builder": "^26.15.3"
   }
 }

@@ -4,7 +4,8 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const projectRoot = fileURLToPath(new URL("../..", import.meta.url));
-const browserProfileDir = join(projectRoot, "data", "marketplace-browser-profile");
+const dataDir = process.env.LEGO_SEARCH_DATA_DIR || join(projectRoot, "data");
+const browserProfileDir = join(dataDir, "marketplace-browser-profile");
 const edgeCandidates = [
   "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
   "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe"
