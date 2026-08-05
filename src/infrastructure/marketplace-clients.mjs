@@ -1,11 +1,34 @@
 import { createMarketplaceResult } from "../domain/search-result.mjs";
 
-export function createMarketplaceClients({ fetchImpl = fetch } = {}) {
-  return {
+export function createMarketplaceClients({ fetchImpl = fetch, browserClients = {} } = {}) {
+  const directClients = {
     shopee: createShopeeClient(fetchImpl),
     momo: createHtmlClient(fetchImpl),
     coupang: createHtmlClient(fetchImpl),
     pchome: createPchomeClient(fetchImpl)
+  };
+
+  return Object.fromEntries(Object.entries(directClients).map(([platformId, client]) => [
+    platformId,
+    withBrowserFallback(client, browserClients[platformId])
+  ]));
+}
+
+function withBrowserFallback(client, browserClient) {
+  if (!browserClient) {
+    return client;
+  }
+
+  return async function searchMarketplace(input) {
+    try {
+      return await client(input);
+    } catch (error) {
+      if (!String(error.message).includes("HTTP 403")) {
+        throw error;
+      }
+
+      return browserClient(input);
+    }
   };
 }
 

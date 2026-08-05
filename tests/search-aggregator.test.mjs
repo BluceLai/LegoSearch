@@ -89,6 +89,34 @@ test("keeps only exact model-number matches while retaining platform search link
   );
 });
 
+test("filters browser-sourced results with the same exact model rule", async () => {
+  const aggregator = createSearchAggregator({
+    clients: {
+      coupang: async () => [
+        result({
+          platformId: "coupang",
+          title: "LEGO \u57ce\u5e02\u7cfb\u5217 \u6a02\u9ad8\u8ca8\u8eca 60500",
+          price: 625,
+          source: "browser"
+        }),
+        result({
+          platformId: "coupang",
+          title: "LEGO \u57ce\u5e02\u7cfb\u5217 \u98db\u6a5f\u4f5c\u696d\u8eca 60505",
+          price: 1599,
+          source: "browser"
+        })
+      ]
+    }
+  });
+
+  const response = await aggregator.search({ text: "60500", platforms: "coupang" });
+
+  assert.deepEqual(response.results.map((item) => [item.title, item.source]), [[
+    "LEGO \u57ce\u5e02\u7cfb\u5217 \u6a02\u9ad8\u8ca8\u8eca 60500",
+    "browser"
+  ]]);
+});
+
 test("keeps products matching official LEGO set names when their model number is omitted", async () => {
   const resolverCalls = [];
   const aggregator = createSearchAggregator({
