@@ -10,6 +10,7 @@ const summaryTitle = document.querySelector("#summary-title");
 const summaryDetail = document.querySelector("#summary-detail");
 const sortSelect = document.querySelector("#sort");
 const showThumbnails = document.querySelector("#show-thumbnails");
+const verifyIopenButton = document.querySelector("#verify-iopen");
 const template = document.querySelector("#result-card-template");
 const platformGroupTemplate = document.querySelector("#platform-group-template");
 
@@ -29,6 +30,7 @@ form.addEventListener("submit", async (event) => {
 
 sortSelect.addEventListener("change", renderResults);
 showThumbnails.addEventListener("change", renderResults);
+verifyIopenButton.addEventListener("click", openIopenVerification);
 
 await boot();
 
@@ -110,6 +112,27 @@ async function search() {
     summaryTitle.textContent = "\u641c\u5c0b\u5931\u6557";
     summaryDetail.textContent = error.message;
     renderEmpty("\u6c92\u6709\u53ef\u986f\u793a\u7684\u7d50\u679c\u3002");
+  }
+}
+
+async function openIopenVerification() {
+  verifyIopenButton.disabled = true;
+
+  try {
+    const response = await fetch("/api/platforms/iopen/verify", { method: "POST" });
+    const body = await response.json();
+
+    if (!response.ok) {
+      throw new Error(body.error || "iOPEN Mall \u9a57\u8b49\u8996\u7a97\u958b\u555f\u5931\u6557\u3002");
+    }
+
+    alertsNode.hidden = false;
+    alertsNode.textContent = "iOPEN Mall \u9a57\u8b49\u8996\u7a97\u5df2\u958b\u555f\u3002\u5b8c\u6210\u5f8c\u95dc\u9589\u8996\u7a97\uff0c\u518d\u91cd\u65b0\u641c\u5c0b\u3002";
+  } catch (error) {
+    alertsNode.hidden = false;
+    alertsNode.textContent = error.message;
+  } finally {
+    verifyIopenButton.disabled = false;
   }
 }
 

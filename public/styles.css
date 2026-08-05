@@ -135,6 +135,20 @@ button:hover {
   filter: brightness(0.94);
 }
 
+.secondary-button {
+  min-height: 44px;
+  padding: 0 13px;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  background: var(--paper);
+  white-space: nowrap;
+}
+
+.secondary-button:hover {
+  background: var(--surface);
+  filter: none;
+}
+
 .summary-bar {
   display: flex;
   justify-content: space-between;

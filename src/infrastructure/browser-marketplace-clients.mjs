@@ -1,15 +1,5 @@
-import { existsSync } from "node:fs";
-import { mkdir } from "node:fs/promises";
-import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { createMarketplaceResult } from "../domain/search-result.mjs";
-
-const projectRoot = fileURLToPath(new URL("../..", import.meta.url));
-const browserProfileDir = join(projectRoot, "data", "marketplace-browser-profile");
-const edgeCandidates = [
-  "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
-  "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe"
-];
+import { ensureMarketplaceBrowserProfile, findMarketplaceEdgeExecutable } from "./marketplace-edge.mjs";
 
 export function createBrowserMarketplaceClients({ createContext = createEdgeContext } = {}) {
   const schedule = createBrowserSearchQueue();
@@ -68,9 +58,9 @@ function createBrowserSearchQueue() {
 }
 
 async function createEdgeContext() {
-  await mkdir(browserProfileDir, { recursive: true });
+  const browserProfileDir = await ensureMarketplaceBrowserProfile();
   const { chromium } = await import("playwright-core");
-  const executablePath = edgeCandidates.find((candidate) => existsSync(candidate));
+  const executablePath = findMarketplaceEdgeExecutable();
 
   if (!executablePath) {
     throw new Error("\u627e\u4e0d\u5230 Microsoft Edge\uff0c\u7121\u6cd5\u4f7f\u7528\u700f\u89bd\u5668\u64f7\u53d6\u3002");

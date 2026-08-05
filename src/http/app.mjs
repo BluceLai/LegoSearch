@@ -12,7 +12,7 @@ const contentTypes = {
   ".json": "application/json; charset=utf-8"
 };
 
-export function createRequestHandler({ aggregator, publicDir }) {
+export function createRequestHandler({ aggregator, publicDir, iopenVerifier }) {
   return async function requestHandler(request, response) {
     const url = new URL(request.url || "/", `http://${request.headers.host || "localhost"}`);
 
@@ -30,6 +30,16 @@ export function createRequestHandler({ aggregator, publicDir }) {
           platforms: url.searchParams.get("platforms") || undefined
         });
         sendJson(response, 200, payload);
+        return;
+      }
+
+      if (url.pathname === "/api/platforms/iopen/verify" && request.method === "POST") {
+        if (!iopenVerifier) {
+          throw new Error("iOPEN Mall \u9a57\u8b49\u670d\u52d9\u5c1a\u672a\u8a2d\u5b9a\u3002");
+        }
+
+        await iopenVerifier.open();
+        sendJson(response, 202, { status: "opened" });
         return;
       }
 

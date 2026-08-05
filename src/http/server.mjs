@@ -3,6 +3,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createSearchAggregator } from "../domain/search-aggregator.mjs";
 import { createBrowserMarketplaceClients } from "../infrastructure/browser-marketplace-clients.mjs";
+import { createIopenVerificationLauncher } from "../infrastructure/iopen-verifier.mjs";
 import { createMarketplaceClients } from "../infrastructure/marketplace-clients.mjs";
 import { createOfficialLegoSetResolver } from "../infrastructure/official-lego-set-resolver.mjs";
 import { createRequestHandler } from "./app.mjs";
@@ -18,7 +19,11 @@ const aggregator = createSearchAggregator({
   resolveLegoSet: createOfficialLegoSetResolver()
 });
 
-const server = createServer(createRequestHandler({ aggregator, publicDir }));
+const server = createServer(createRequestHandler({
+  aggregator,
+  publicDir,
+  iopenVerifier: createIopenVerificationLauncher()
+}));
 
 server.listen(port, () => {
   console.log(`LegoSearch running at http://localhost:${port}`);

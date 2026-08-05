@@ -8,6 +8,8 @@ test("web entrypoint keeps local assets relative and includes a startup notice",
   assert.match(html, /href="\.\/styles\.css"/);
   assert.match(html, /src="\.\/app\.js"/);
   assert.match(html, /id="open-instructions"/);
+  assert.match(html, /window\.location\.replace\("http:\/\/localhost:5178\/"\)/);
   assert.match(html, /id="show-thumbnails"/);
+  assert.match(html, /id="verify-iopen"/);
   assert.match(html, /id="platform-group-template"/);
 });

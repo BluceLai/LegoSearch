@@ -70,6 +70,27 @@ test("serves browser modules with a JavaScript content type", async () => {
   }
 });
 
+test("POST /api/platforms/iopen/verify opens the verification window", async () => {
+  const calls = [];
+  const { baseUrl, close } = await startTestServer({
+    iopenVerifier: {
+      async open() {
+        calls.push("open");
+      }
+    }
+  });
+
+  try {
+    const response = await fetch(`${baseUrl}/api/platforms/iopen/verify`, { method: "POST" });
+
+    assert.equal(response.status, 202);
+    assert.deepEqual(await response.json(), { status: "opened" });
+    assert.deepEqual(calls, ["open"]);
+  } finally {
+    await close();
+  }
+});
+
 async function startTestServer(options = {}) {
   const server = createServer(createRequestHandler({
     aggregator: options.aggregator || {
@@ -77,7 +98,8 @@ async function startTestServer(options = {}) {
         return { query: "", platformIds: [], searchedAt: "", results: [], errors: [] };
       }
     },
-    publicDir: options.publicDir || new URL(".", import.meta.url)
+    publicDir: options.publicDir || new URL(".", import.meta.url),
+    iopenVerifier: options.iopenVerifier
   }));
 
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));

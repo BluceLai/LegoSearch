@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>LegoSearch</title>
     <link rel="stylesheet" href="./styles.css" />
+    <script>
+      if (window.location.protocol === "file:") {
+        window.location.replace("http://localhost:5178/");
+      }
+    </script>
   </head>
   <body>
     <main class="workspace">
@@ -44,6 +49,7 @@
             <input id="show-thumbnails" type="checkbox" checked />
             <span>&#x986f;&#x793a;&#x7e2e;&#x5716;</span>
           </label>
+          <button id="verify-iopen" class="secondary-button" type="button">&#x9a57;&#x8b49; iOPEN Mall</button>
         </div>
       </section>
 
