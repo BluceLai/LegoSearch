@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { startLegoSearchServer } from "../src/http/server.mjs";
+import { resolveDataDir, startLegoSearchServer } from "../src/http/server.mjs";
+
+test("uses the configured user data directory for desktop history", () => {
+  assert.equal(resolveDataDir({
+    LEGO_SEARCH_DATA_DIR: "C:/Users/BluceL/AppData/Roaming/LegoSearch"
+  }), "C:/Users/BluceL/AppData/Roaming/LegoSearch");
+});
 
 test("starts a local server on an ephemeral port for desktop use", async () => {
   const running = await startLegoSearchServer({ port: 0 });

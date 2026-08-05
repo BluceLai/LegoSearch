@@ -14,7 +14,7 @@ import { createRequestHandler } from "./app.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const publicDir = join(__dirname, "..", "..", "public");
-const dataDir = join(__dirname, "..", "..", "data");
+const defaultDataDir = join(__dirname, "..", "..", "data");
 
 export async function startLegoSearchServer({ port = 5178, host = "127.0.0.1" } = {}) {
   const server = createLegoSearchServer();
@@ -50,10 +50,14 @@ export function createLegoSearchServer() {
     aggregator,
     publicDir,
     historyRepository: createPriceHistoryRepository({
-      filePath: join(dataDir, "price-history.json")
+      filePath: join(resolveDataDir(), "price-history.json")
     }),
     iopenVerifier: createIopenVerificationLauncher()
   }));
+}
+
+export function resolveDataDir(environment = process.env) {
+  return environment.LEGO_SEARCH_DATA_DIR || defaultDataDir;
 }
 
 if (isDirectRun()) {
