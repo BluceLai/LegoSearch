@@ -1,4 +1,4 @@
-export function organizeResults({ results, platformIds, sort }) {
+export function organizeResults({ results, platformIds, sort, officialReferenceTwd = null }) {
   const groups = new Map();
 
   for (const result of results) {
@@ -20,7 +20,7 @@ export function organizeResults({ results, platformIds, sort }) {
       return {
         ...group,
         results: sortedResults,
-        lowestResult: findLowestPricedResult(sortedResults)
+        lowestResult: findLowestPricedResult(sortedResults, officialReferenceTwd)
       };
     })
     .sort((left, right) => {
@@ -33,9 +33,15 @@ export function organizeResults({ results, platformIds, sort }) {
     });
 }
 
-function findLowestPricedResult(results) {
+function findLowestPricedResult(results, officialReferenceTwd) {
+  const minimumEligiblePrice = Number.isFinite(officialReferenceTwd)
+    ? officialReferenceTwd * 0.3
+    : null;
+
   return results.reduce((lowest, result) => {
-    if (result.price === null || (lowest && lowest.price <= result.price)) {
+    if (result.price === null
+      || (minimumEligiblePrice !== null && result.price < minimumEligiblePrice)
+      || (lowest && lowest.price <= result.price)) {
       return lowest;
     }
 

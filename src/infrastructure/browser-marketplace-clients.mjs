@@ -1,13 +1,21 @@
 import { createMarketplaceResult } from "../domain/search-result.mjs";
-import { ensureMarketplaceBrowserProfile, findMarketplaceEdgeExecutable } from "./marketplace-edge.mjs";
+import {
+  createMarketplaceEdgeContext,
+  scheduleMarketplaceBrowserWork
+} from "./marketplace-edge.mjs";
 
-export function createBrowserMarketplaceClients({ createContext = createEdgeContext } = {}) {
-  const schedule = createBrowserSearchQueue();
-
-  return {
-    iopen: createBrowserClient("iopen", createContext, schedule),
-    coupang: createBrowserClient("coupang", createContext, schedule)
-  };
+export function createBrowserMarketplaceClients({
+  createContext = createMarketplaceEdgeContext,
+  schedule = null
+} = {}) {
+  return Object.fromEntries(["iopen", "coupang"].map((platformId) => [
+    platformId,
+    createBrowserClient(
+      platformId,
+      () => createContext({ profileName: browserProfileName(platformId) }),
+      schedule || ((work) => scheduleMarketplaceBrowserWork(browserProfileName(platformId), work))
+    )
+  ]));
 }
 
 function createBrowserClient(platformId, createContext, schedule) {
@@ -47,39 +55,18 @@ function createBrowserClient(platformId, createContext, schedule) {
   };
 }
 
-function createBrowserSearchQueue() {
-  let pending = Promise.resolve();
-
-  return function schedule(work) {
-    const search = pending.then(work, work);
-    pending = search.catch(() => {});
-    return search;
-  };
-}
-
-async function createEdgeContext() {
-  const browserProfileDir = await ensureMarketplaceBrowserProfile();
-  const { chromium } = await import("playwright-core");
-  const executablePath = findMarketplaceEdgeExecutable();
-
-  if (!executablePath) {
-    throw new Error("\u627e\u4e0d\u5230 Microsoft Edge\uff0c\u7121\u6cd5\u4f7f\u7528\u700f\u89bd\u5668\u64f7\u53d6\u3002");
-  }
-
-  return chromium.launchPersistentContext(browserProfileDir, {
-    executablePath,
-    headless: false,
-    args: ["--start-minimized", "--window-position=-32000,-32000"],
-    viewport: { width: 1440, height: 1000 }
-  });
-}
-
 function productLinkSelector(platformId) {
   if (platformId === "coupang") {
     return 'a[href*="/products/"]';
   }
 
   return 'ul.gh_SearchBox > li a[href*="action=product_detail"]';
+}
+
+function browserProfileName(platformId) {
+  return platformId === "iopen"
+    ? "marketplace-browser-profile"
+    : `${platformId}-browser-profile`;
 }
 
 function extractVisibleProducts({ platformId }) {

@@ -180,7 +180,7 @@ function browserContextThatEvaluatesPageFunction() {
   };
 }
 
-test("serializes browser searches that share the Edge profile", async () => {
+test("runs browser searches for separate platforms concurrently", async () => {
   let activeContexts = 0;
   let highestActiveContexts = 0;
   const clients = createBrowserMarketplaceClients({
@@ -213,7 +213,7 @@ test("serializes browser searches that share the Edge profile", async () => {
     clients.coupang({ ...input, platform: getPlatform("coupang") })
   ]);
 
-  assert.equal(highestActiveContexts, 1);
+  assert.equal(highestActiveContexts, 2);
 });
 
 test("reports a concise iOPEN Mall message when visible browser products are unavailable", async () => {

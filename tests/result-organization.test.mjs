@@ -35,6 +35,21 @@ test("keeps the platform summary on the lowest price when detail results sort hi
   assert.equal(group.lowestResult.title, "Low");
 });
 
+test("omits implausibly low prices from the platform summary without removing detail results", () => {
+  const [group] = organizeResults({
+    platformIds: ["iopen"],
+    sort: "price-asc",
+    officialReferenceTwd: 16000,
+    results: [
+      result({ platformId: "iopen", platformName: "iOPEN Mall", title: "Suspicious", price: 18 }),
+      result({ platformId: "iopen", platformName: "iOPEN Mall", title: "Eligible", price: 5000 })
+    ]
+  });
+
+  assert.deepEqual(group.results.map((item) => item.title), ["Suspicious", "Eligible"]);
+  assert.equal(group.lowestResult.title, "Eligible");
+});
+
 function result(overrides) {
   return {
     platformId: "momo",

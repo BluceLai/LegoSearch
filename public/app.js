@@ -5,6 +5,7 @@ const queryInput = document.querySelector("#query");
 const platformsNode = document.querySelector("#platforms");
 const resultsNode = document.querySelector("#results");
 const lowestResultsNode = document.querySelector("#lowest-results");
+const officialPricesNode = document.querySelector("#official-prices");
 const alertsNode = document.querySelector("#alerts");
 const openInstructions = document.querySelector("#open-instructions");
 const summaryTitle = document.querySelector("#summary-title");
@@ -18,6 +19,8 @@ const platformGroupTemplate = document.querySelector("#platform-group-template")
 let results = [];
 let selectedPlatformIds = [];
 let expandedPlatformIds = new Set();
+let officialPrices = [];
+let officialReferenceTwd = null;
 
 const money = new Intl.NumberFormat("zh-TW", {
   style: "currency",
@@ -100,6 +103,8 @@ async function search() {
     results = body.results || [];
     selectedPlatformIds = body.platformIds || [];
     expandedPlatformIds = new Set();
+    officialPrices = body.officialPrices || [];
+    officialReferenceTwd = body.officialReferenceTwd;
     const priced = results.filter((item) => item.price !== null).length;
     summaryTitle.textContent = `${results.length} \u7b46\u7d50\u679c`;
     summaryDetail.textContent = `${priced} \u7b46\u542b\u89e3\u6790\u50f9\u683c\u3002\u5e73\u53f0\u64cb\u4e0b\u81ea\u52d5\u64f7\u53d6\u6642\u6703\u4fdd\u7559\u641c\u5c0b\u9023\u7d50\u3002`;
@@ -109,9 +114,13 @@ async function search() {
       alertsNode.textContent = body.errors.map((error) => `${error.platformName}: ${error.message}`).join(" / ");
     }
 
+    renderOfficialPrices();
     renderResults();
   } catch (error) {
     results = [];
+    officialPrices = [];
+    officialReferenceTwd = null;
+    renderOfficialPrices();
     summaryTitle.textContent = "\u641c\u5c0b\u5931\u6557";
     summaryDetail.textContent = error.message;
     renderEmpty("\u6c92\u6709\u53ef\u986f\u793a\u7684\u7d50\u679c\u3002");
@@ -142,6 +151,9 @@ async function openIopenVerification() {
 function showStartupError(message) {
   results = [];
   selectedPlatformIds = [];
+  officialPrices = [];
+  officialReferenceTwd = null;
+  renderOfficialPrices();
   summaryTitle.textContent = "\u7121\u6cd5\u958b\u59cb\u641c\u5c0b";
   summaryDetail.textContent = message;
   openInstructions.hidden = false;
@@ -154,7 +166,8 @@ function renderResults() {
   const groups = organizeResults({
     results,
     platformIds: selectedPlatformIds,
-    sort: sortSelect.value
+    sort: sortSelect.value,
+    officialReferenceTwd
   });
   resultsNode.classList.toggle("list-mode", !showThumbnails.checked);
 
@@ -166,6 +179,41 @@ function renderResults() {
 
   renderLowestResults(groups);
   resultsNode.replaceChildren(...groups.map(renderPlatformGroup));
+}
+
+function renderOfficialPrices() {
+  officialPricesNode.hidden = officialPrices.length === 0;
+
+  if (!officialPrices.length) {
+    officialPricesNode.replaceChildren();
+    return;
+  }
+
+  const title = document.createElement("strong");
+  title.textContent = "\u5b98\u65b9\u5b9a\u50f9";
+  const values = document.createElement("div");
+  values.className = "official-price-values";
+  values.replaceChildren(...officialPrices.map(renderOfficialPrice));
+  officialPricesNode.replaceChildren(title, values);
+}
+
+function renderOfficialPrice(price) {
+  const link = document.createElement("a");
+  link.href = price.url;
+  link.target = "_blank";
+  link.rel = "noreferrer";
+  link.textContent = formatOfficialPrice(price);
+  return link;
+}
+
+function formatOfficialPrice(price) {
+  if (price.currency === "TWD") {
+    return `\u53f0\u5e63 ${money.format(price.amount)}`;
+  }
+
+  const currency = price.currency === "USD" ? "\u7f8e\u5143" : "\u6b50\u5143";
+  const symbol = price.currency === "USD" ? "US$" : "EUR ";
+  return `${currency} ${symbol}${price.amount.toLocaleString("en-US", { maximumFractionDigits: 2 })} (\u7d04 ${money.format(price.convertedTwd)})`;
 }
 
 function renderLowestResults(groups) {

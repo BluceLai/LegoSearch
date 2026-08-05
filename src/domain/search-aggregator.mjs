@@ -45,6 +45,8 @@ export function createSearchAggregator({
         query: query.text,
         platformIds: query.platformIds,
         searchedAt,
+        officialPrices: legoSet?.officialPrices || [],
+        officialReferenceTwd: legoSet?.officialReferenceTwd ?? null,
         results: settled
           .flatMap((item) => filterPlatformResults({
             ...item,

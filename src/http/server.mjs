@@ -5,6 +5,7 @@ import { createSearchAggregator } from "../domain/search-aggregator.mjs";
 import { createBrowserMarketplaceClients } from "../infrastructure/browser-marketplace-clients.mjs";
 import { createIopenVerificationLauncher } from "../infrastructure/iopen-verifier.mjs";
 import { createMarketplaceClients } from "../infrastructure/marketplace-clients.mjs";
+import { createOfficialLegoPriceBrowserFetcher } from "../infrastructure/official-lego-price-browser.mjs";
 import { createOfficialLegoSetResolver } from "../infrastructure/official-lego-set-resolver.mjs";
 import { createRequestHandler } from "./app.mjs";
 
@@ -34,7 +35,9 @@ export function createLegoSearchServer() {
     clients: createMarketplaceClients({
       browserClients: createBrowserMarketplaceClients()
     }),
-    resolveLegoSet: createOfficialLegoSetResolver()
+    resolveLegoSet: createOfficialLegoSetResolver({
+      fetchProductPages: createOfficialLegoPriceBrowserFetcher()
+    })
   });
 
   return createServer(createRequestHandler({

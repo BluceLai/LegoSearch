@@ -3,6 +3,7 @@ import "./server-lifecycle.test.mjs";
 import "./platform-catalog.test.mjs";
 import "./search-aggregator.test.mjs";
 import "./official-lego-set-resolver.test.mjs";
+import "./official-lego-price-browser.test.mjs";
 import "./browser-marketplace-clients.test.mjs";
 import "./desktop-packaging.test.mjs";
 import "./iopen-verifier.test.mjs";
