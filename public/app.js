@@ -214,10 +214,13 @@ function formatOfficialPrice(price) {
     return `\u53f0\u5e63 ${money.format(price.amount)}`;
   }
 
-  const currency = price.currency === "USD" ? "\u7f8e\u5143" : "\u6b50\u5143";
-  const symbol = price.currency === "USD" ? "US$" : "EUR ";
+  const currency = "\u7f8e\u5143";
+  const symbol = "US$";
   const converted = price.convertedTwd === null ? "\u53f0\u9280\u532f\u7387\u66ab\u6642\u7121\u6cd5\u53d6\u5f97" : `\u53f0\u9280 ${price.exchangeRate}，\u7d04 ${money.format(price.convertedTwd)}`;
-  return `${currency} ${symbol}${price.amount.toLocaleString("en-US", { maximumFractionDigits: 2 })} (${converted})`;
+  const verification = price.source === "brickeconomy"
+    ? "，來源 BrickEconomy Retail"
+    : price.verifiedBy === "brickeconomy" ? "，BrickEconomy 已驗證" : "";
+  return `${currency} ${symbol}${price.amount.toLocaleString("en-US", { maximumFractionDigits: 2 })} (${converted})${verification}`;
 }
 
 function renderLowestResults(groups) {

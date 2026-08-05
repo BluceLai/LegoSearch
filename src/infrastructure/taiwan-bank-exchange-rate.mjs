@@ -1,5 +1,5 @@
 const sourceUrl = "https://rate.bot.com.tw/xrt?Lang=zh-TW";
-const trackedCurrencies = ["USD", "EUR"];
+const trackedCurrencies = ["USD"];
 
 export function createTaiwanBankExchangeRateResolver({
   fetchImpl = fetch,

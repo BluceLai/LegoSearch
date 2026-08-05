@@ -1,13 +1,13 @@
 const localePaths = ["zh-tw", "en-us"];
 const officialPriceLocales = [
   { locale: "zh-tw", currency: "TWD" },
-  { locale: "en-us", currency: "USD" },
-  { locale: "en-de", currency: "EUR" }
+  { locale: "en-us", currency: "USD" }
 ];
 
 export function createOfficialLegoSetResolver({
   fetchImpl = fetch,
   fetchProductPages = null,
+  resolveBrickEconomyRetailPrice = async () => null,
   resolveExchangeRates = async () => null,
   maxEntries = 200
 } = {}) {
@@ -27,7 +27,8 @@ export function createOfficialLegoSetResolver({
       inFlight.set(setNumber, fetchOfficialSet({
         setNumber,
         fetchImpl,
-        fetchProductPages
+        fetchProductPages,
+        resolveBrickEconomyRetailPrice
       }));
     }
 
@@ -46,7 +47,12 @@ export function createOfficialLegoSetResolver({
   };
 }
 
-async function fetchOfficialSet({ setNumber, fetchImpl, fetchProductPages }) {
+async function fetchOfficialSet({
+  setNumber,
+  fetchImpl,
+  fetchProductPages,
+  resolveBrickEconomyRetailPrice
+}) {
   const names = [];
 
   const setNames = await Promise.all(
@@ -65,6 +71,10 @@ async function fetchOfficialSet({ setNumber, fetchImpl, fetchProductPages }) {
 
   const englishName = setNames[localePaths.indexOf("en-us")];
   const productSlug = productSlugFor(englishName);
+  const brickEconomyRetailPricePromise = safelyResolveBrickEconomyRetailPrice(
+    resolveBrickEconomyRetailPrice,
+    setNumber
+  );
   const priceRequests = productSlug
     ? officialPriceLocales.map((priceLocale) => ({
       ...priceLocale,
@@ -79,7 +89,7 @@ async function fetchOfficialSet({ setNumber, fetchImpl, fetchProductPages }) {
   const renderedPages = missingRequests.length && fetchProductPages
     ? await fetchProductPages(missingRequests.map((request) => request.url))
     : new Map();
-  const unconvertedPrices = priceRequests.map((request, index) => {
+  const directOfficialPrices = priceRequests.map((request, index) => {
     const directPrice = directPrices[index];
     if (directPrice) {
       return directPrice;
@@ -90,11 +100,42 @@ async function fetchOfficialSet({ setNumber, fetchImpl, fetchProductPages }) {
       html: renderedPages.get(request.url)
     });
   }).filter(Boolean);
+  const brickEconomyRetailPrice = await brickEconomyRetailPricePromise;
+  const unconvertedPrices = mergeBrickEconomyRetailPrice(directOfficialPrices, brickEconomyRetailPrice);
   return {
     setNumber,
     names,
     officialPrices: unconvertedPrices
   };
+}
+
+async function safelyResolveBrickEconomyRetailPrice(resolveBrickEconomyRetailPrice, setNumber) {
+  try {
+    return await resolveBrickEconomyRetailPrice(setNumber);
+  } catch {
+    return null;
+  }
+}
+
+function mergeBrickEconomyRetailPrice(prices, brickEconomyRetailPrice) {
+  if (!brickEconomyRetailPrice || brickEconomyRetailPrice.currency !== "USD") {
+    return prices;
+  }
+
+  const officialUsdPrice = prices.find((price) => price.currency === "USD");
+  if (!officialUsdPrice) {
+    return [...prices, brickEconomyRetailPrice];
+  }
+
+  if (officialUsdPrice.amount !== brickEconomyRetailPrice.amount) {
+    return prices;
+  }
+
+  return prices.map((price) => price === officialUsdPrice ? {
+    ...price,
+    verifiedBy: "brickeconomy",
+    verificationUrl: brickEconomyRetailPrice.url
+  } : price);
 }
 
 async function fetchSetName({ locale, setNumber, fetchImpl }) {
@@ -231,7 +272,7 @@ function extractOfficialPrice(html, currency) {
 }
 
 function selectReferencePrice(prices) {
-  return ["TWD", "USD", "EUR"].map((currency) => (
+  return ["TWD", "USD"].map((currency) => (
     prices.find((price) => price.currency === currency)
   )).find(Boolean) || null;
 }

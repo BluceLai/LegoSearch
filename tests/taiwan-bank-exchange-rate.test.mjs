@@ -2,13 +2,13 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { createTaiwanBankExchangeRateResolver } from "../src/infrastructure/taiwan-bank-exchange-rate.mjs";
 
-test("reads Taiwan Bank spot selling rates for USD and EUR", async () => {
+test("reads the Taiwan Bank spot selling rate for USD", async () => {
   const resolveRates = createTaiwanBankExchangeRateResolver({
     fetchImpl: async () => ({ ok: true, text: async () => exchangeRateHtml() })
   });
 
   assert.deepEqual(await resolveRates(), {
-    rates: { USD: 32.335, EUR: 37.44 },
+    rates: { USD: 32.335 },
     quotedAt: "2026/08/05 13:00",
     sourceUrl: "https://rate.bot.com.tw/xrt?Lang=zh-TW"
   });

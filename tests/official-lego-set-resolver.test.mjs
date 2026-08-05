@@ -6,9 +6,15 @@ test("resolves set names and prioritizes the Taiwan official price as the summar
   const requestedUrls = [];
   const resolveLegoSet = createOfficialLegoSetResolver({
     resolveExchangeRates: async () => ({
-      rates: { USD: 32.335, EUR: 37.44 },
+      rates: { USD: 32.335 },
       quotedAt: "2026/08/05 13:00",
       sourceUrl: "https://rate.bot.com.tw/xrt?Lang=zh-TW"
+    }),
+    resolveBrickEconomyRetailPrice: async () => ({
+      amount: 399.99,
+      currency: "USD",
+      source: "brickeconomy",
+      url: "https://www.brickeconomy.com/set/10305-1/lego-lion-knights-castle"
     }),
     fetchImpl: async (url) => {
       requestedUrls.push(String(url));
@@ -33,14 +39,9 @@ test("resolves set names and prioritizes the Taiwan official price as the summar
         amount: 399.99,
         convertedTwd: 12934,
         exchangeRate: 32.335,
+        verifiedBy: "brickeconomy",
+        verificationUrl: "https://www.brickeconomy.com/set/10305-1/lego-lion-knights-castle",
         url: "https://www.lego.com/en-us/product/lion-knights-castle-10305"
-      },
-      {
-        currency: "EUR",
-        amount: 399.99,
-        convertedTwd: 14976,
-        exchangeRate: 37.44,
-        url: "https://www.lego.com/en-de/product/lion-knights-castle-10305"
       }
     ],
     officialReferenceTwd: 12999,
@@ -53,15 +54,14 @@ test("resolves set names and prioritizes the Taiwan official price as the summar
     "https://www.lego.com/zh-tw/service/building-instructions/10305",
     "https://www.lego.com/en-us/service/building-instructions/10305",
     "https://www.lego.com/zh-tw/product/lion-knights-castle-10305",
-    "https://www.lego.com/en-us/product/lion-knights-castle-10305",
-    "https://www.lego.com/en-de/product/lion-knights-castle-10305"
+    "https://www.lego.com/en-us/product/lion-knights-castle-10305"
   ].sort());
 });
 
 test("uses a Taiwan Bank USD rate when Taiwan pricing is unavailable", async () => {
   const resolveLegoSet = createOfficialLegoSetResolver({
     resolveExchangeRates: async () => ({ rates: { USD: 30 } }),
-    fetchImpl: async (url) => responseFor(url, { taiwanPrice: null, usdPrice: 19.99, eurPrice: null })
+    fetchImpl: async (url) => responseFor(url, { taiwanPrice: null, usdPrice: 19.99 })
   });
 
   const set = await resolveLegoSet("10305");
@@ -70,11 +70,36 @@ test("uses a Taiwan Bank USD rate when Taiwan pricing is unavailable", async () 
   assert.deepEqual(set.officialPrices.map((price) => price.currency), ["USD"]);
 });
 
+test("uses the BrickEconomy Retail price when LEGO does not publish a USD price", async () => {
+  const resolveLegoSet = createOfficialLegoSetResolver({
+    resolveExchangeRates: async () => ({ rates: { USD: 30 } }),
+    resolveBrickEconomyRetailPrice: async () => ({
+      amount: 249.99,
+      currency: "USD",
+      source: "brickeconomy",
+      url: "https://www.brickeconomy.com/set/99999-1/example"
+    }),
+    fetchImpl: async (url) => responseFor(url, { taiwanPrice: null, usdPrice: null })
+  });
+
+  const set = await resolveLegoSet("10305");
+
+  assert.deepEqual(set.officialPrices, [{
+    currency: "USD",
+    amount: 249.99,
+    convertedTwd: 7500,
+    exchangeRate: 30,
+    source: "brickeconomy",
+    url: "https://www.brickeconomy.com/set/99999-1/example"
+  }]);
+  assert.equal(set.officialReferenceTwd, 7500);
+});
+
 test("reapplies the current exchange rate when returning a cached official set", async () => {
   let usdRate = 30;
   const resolveLegoSet = createOfficialLegoSetResolver({
     resolveExchangeRates: async () => ({ rates: { USD: usdRate } }),
-    fetchImpl: async (url) => responseFor(url, { taiwanPrice: null, usdPrice: 20, eurPrice: null })
+    fetchImpl: async (url) => responseFor(url, { taiwanPrice: null, usdPrice: 20 })
   });
 
   assert.equal((await resolveLegoSet("10305")).officialReferenceTwd, 600);
@@ -85,28 +110,25 @@ test("reapplies the current exchange rate when returning a cached official set",
 test("uses browser-rendered official product pages when direct requests are blocked", async () => {
   const requestedPages = [];
   const resolveLegoSet = createOfficialLegoSetResolver({
-    resolveExchangeRates: async () => ({ rates: { USD: 30, EUR: 35 } }),
+    resolveExchangeRates: async () => ({ rates: { USD: 30 } }),
     fetchImpl: async (url) => {
       if (String(url).includes("building-instructions")) {
-        return responseFor(url, { taiwanPrice: null, usdPrice: null, eurPrice: null });
+        return responseFor(url, { taiwanPrice: null, usdPrice: null });
       }
 
       return { ok: false, text: async () => "" };
     },
     fetchProductPages: async (urls) => {
       requestedPages.push(...urls);
-      return new Map([
-        [urls.find((url) => url.includes("en-us")), "$29.99"],
-        [urls.find((url) => url.includes("en-de")), "\u20ac24.99"]
-      ]);
+      return new Map([[urls.find((url) => url.includes("en-us")), "$29.99"]]);
     }
   });
 
   const set = await resolveLegoSet("10305");
 
-  assert.equal(requestedPages.length, 3);
+  assert.equal(requestedPages.length, 2);
   assert.equal(set.officialReferenceTwd, 900);
-  assert.deepEqual(set.officialPrices.map((price) => price.currency), ["USD", "EUR"]);
+  assert.deepEqual(set.officialPrices.map((price) => price.currency), ["USD"]);
 });
 
 test("does not cache an official lookup that returns no set names", async () => {
@@ -138,10 +160,10 @@ test("evicts the oldest cached set name when the cache reaches its limit", async
   await resolveLegoSet("10306");
   await resolveLegoSet("10305");
 
-  assert.equal(calls, 15);
+  assert.equal(calls, 12);
 });
 
-function responseFor(url, { taiwanPrice = 12999, usdPrice = 399.99, eurPrice = 399.99 } = {}) {
+function responseFor(url, { taiwanPrice = 12999, usdPrice = 399.99 } = {}) {
   const value = String(url);
   const html = value.includes("building-instructions")
     ? (value.includes("zh-tw")
@@ -151,9 +173,7 @@ function responseFor(url, { taiwanPrice = 12999, usdPrice = 399.99, eurPrice = 3
       ? `<main>NT$${taiwanPrice.toLocaleString("en-US")}</main>`
       : value.includes("en-us") && usdPrice
         ? `<main>$${usdPrice.toFixed(2)}</main>`
-        : value.includes("en-de") && eurPrice
-          ? `<main>\u20ac${eurPrice.toFixed(2)}</main>`
-          : "<main>Out of stock</main>";
+        : "<main>Out of stock</main>";
 
   return {
     ok: true,

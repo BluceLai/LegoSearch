@@ -3,6 +3,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createSearchAggregator } from "../domain/search-aggregator.mjs";
 import { createBrowserMarketplaceClients } from "../infrastructure/browser-marketplace-clients.mjs";
+import { createBrickEconomyRetailPriceResolver } from "../infrastructure/brickeconomy-retail-price.mjs";
 import { createIopenVerificationLauncher } from "../infrastructure/iopen-verifier.mjs";
 import { createMarketplaceClients } from "../infrastructure/marketplace-clients.mjs";
 import { createOfficialLegoPriceBrowserFetcher } from "../infrastructure/official-lego-price-browser.mjs";
@@ -38,6 +39,7 @@ export function createLegoSearchServer() {
     }),
     resolveLegoSet: createOfficialLegoSetResolver({
       fetchProductPages: createOfficialLegoPriceBrowserFetcher(),
+      resolveBrickEconomyRetailPrice: createBrickEconomyRetailPriceResolver(),
       resolveExchangeRates: createTaiwanBankExchangeRateResolver()
     })
   });
