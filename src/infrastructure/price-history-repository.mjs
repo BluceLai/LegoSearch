@@ -46,7 +46,7 @@ function createDailySnapshot(search, searchedAt, timeZone) {
   const setNumber = String(search?.query || "").match(/\b(\d{4,6})\b/)?.[1];
   const platforms = summarizePlatforms(search?.results || []);
 
-  if (!setNumber || !platforms.length) {
+  if (!setNumber) {
     return null;
   }
 

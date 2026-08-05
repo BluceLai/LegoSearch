@@ -47,6 +47,33 @@ test("keeps one daily platform price range and adds a new entry on the following
   }
 });
 
+test("keeps a model-number search even when no platform price can be parsed", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "lego-search-history-"));
+  const history = createPriceHistoryRepository({
+    filePath: join(directory, "price-history.json"),
+    now: () => new Date("2026-08-05T04:00:00.000Z")
+  });
+
+  try {
+    await history.record({
+      query: "LEGO 60500",
+      results: [{ platformId: "iopen", platformName: "iOPEN Mall", price: null, source: "search-link" }]
+    });
+
+    assert.deepEqual(await history.list(), [{
+      setNumber: "60500",
+      query: "LEGO 60500",
+      dates: [{
+        date: "2026-08-05",
+        searchedAt: "2026-08-05T04:00:00.000Z",
+        platforms: []
+      }]
+    }]);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
 function searchSnapshot({ momoPrices, pchomePrices }) {
   return {
     query: "LEGO 10305",

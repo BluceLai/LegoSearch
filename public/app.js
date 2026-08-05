@@ -229,11 +229,17 @@ function renderHistoryDate(entry) {
   date.textContent = formatHistoryDate(entry.date);
   const platforms = document.createElement("div");
   platforms.className = "history-platforms";
-  platforms.replaceChildren(...entry.platforms.map((platform) => {
+  const summaries = entry.platforms.map((platform) => {
     const summary = document.createElement("p");
     summary.textContent = `${platform.platformName}  ${money.format(platform.lowestPrice)} - ${money.format(platform.highestPrice)}`;
     return summary;
-  }));
+  });
+  if (!summaries.length) {
+    const empty = document.createElement("p");
+    empty.textContent = "\u5c1a\u7121\u5df2\u89e3\u6790\u50f9\u683c\u3002";
+    summaries.push(empty);
+  }
+  platforms.replaceChildren(...summaries);
   row.append(date, platforms);
   return row;
 }
