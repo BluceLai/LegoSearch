@@ -5,6 +5,11 @@ import { createOfficialLegoSetResolver } from "../src/infrastructure/official-le
 test("resolves set names and prioritizes the Taiwan official price as the summary reference", async () => {
   const requestedUrls = [];
   const resolveLegoSet = createOfficialLegoSetResolver({
+    resolveExchangeRates: async () => ({
+      rates: { USD: 32.335, EUR: 37.44 },
+      quotedAt: "2026/08/05 13:00",
+      sourceUrl: "https://rate.bot.com.tw/xrt?Lang=zh-TW"
+    }),
     fetchImpl: async (url) => {
       requestedUrls.push(String(url));
       return responseFor(url);
@@ -26,17 +31,23 @@ test("resolves set names and prioritizes the Taiwan official price as the summar
       {
         currency: "USD",
         amount: 399.99,
-        convertedTwd: 16000,
+        convertedTwd: 12934,
+        exchangeRate: 32.335,
         url: "https://www.lego.com/en-us/product/lion-knights-castle-10305"
       },
       {
         currency: "EUR",
         amount: 399.99,
-        convertedTwd: 16000,
+        convertedTwd: 14976,
+        exchangeRate: 37.44,
         url: "https://www.lego.com/en-de/product/lion-knights-castle-10305"
       }
     ],
-    officialReferenceTwd: 12999
+    officialReferenceTwd: 12999,
+    exchangeRateInfo: {
+      quotedAt: "2026/08/05 13:00",
+      sourceUrl: "https://rate.bot.com.tw/xrt?Lang=zh-TW"
+    }
   });
   assert.deepEqual(requestedUrls.sort(), [
     "https://www.lego.com/zh-tw/service/building-instructions/10305",
@@ -47,20 +58,34 @@ test("resolves set names and prioritizes the Taiwan official price as the summar
   ].sort());
 });
 
-test("uses a USD official price converted at forty when Taiwan pricing is unavailable", async () => {
+test("uses a Taiwan Bank USD rate when Taiwan pricing is unavailable", async () => {
   const resolveLegoSet = createOfficialLegoSetResolver({
+    resolveExchangeRates: async () => ({ rates: { USD: 30 } }),
     fetchImpl: async (url) => responseFor(url, { taiwanPrice: null, usdPrice: 19.99, eurPrice: null })
   });
 
   const set = await resolveLegoSet("10305");
 
-  assert.equal(set.officialReferenceTwd, 800);
+  assert.equal(set.officialReferenceTwd, 600);
   assert.deepEqual(set.officialPrices.map((price) => price.currency), ["USD"]);
+});
+
+test("reapplies the current exchange rate when returning a cached official set", async () => {
+  let usdRate = 30;
+  const resolveLegoSet = createOfficialLegoSetResolver({
+    resolveExchangeRates: async () => ({ rates: { USD: usdRate } }),
+    fetchImpl: async (url) => responseFor(url, { taiwanPrice: null, usdPrice: 20, eurPrice: null })
+  });
+
+  assert.equal((await resolveLegoSet("10305")).officialReferenceTwd, 600);
+  usdRate = 31;
+  assert.equal((await resolveLegoSet("10305")).officialReferenceTwd, 620);
 });
 
 test("uses browser-rendered official product pages when direct requests are blocked", async () => {
   const requestedPages = [];
   const resolveLegoSet = createOfficialLegoSetResolver({
+    resolveExchangeRates: async () => ({ rates: { USD: 30, EUR: 35 } }),
     fetchImpl: async (url) => {
       if (String(url).includes("building-instructions")) {
         return responseFor(url, { taiwanPrice: null, usdPrice: null, eurPrice: null });
@@ -80,7 +105,7 @@ test("uses browser-rendered official product pages when direct requests are bloc
   const set = await resolveLegoSet("10305");
 
   assert.equal(requestedPages.length, 3);
-  assert.equal(set.officialReferenceTwd, 1200);
+  assert.equal(set.officialReferenceTwd, 900);
   assert.deepEqual(set.officialPrices.map((price) => price.currency), ["USD", "EUR"]);
 });
 

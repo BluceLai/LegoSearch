@@ -7,6 +7,7 @@ import { createIopenVerificationLauncher } from "../infrastructure/iopen-verifie
 import { createMarketplaceClients } from "../infrastructure/marketplace-clients.mjs";
 import { createOfficialLegoPriceBrowserFetcher } from "../infrastructure/official-lego-price-browser.mjs";
 import { createOfficialLegoSetResolver } from "../infrastructure/official-lego-set-resolver.mjs";
+import { createTaiwanBankExchangeRateResolver } from "../infrastructure/taiwan-bank-exchange-rate.mjs";
 import { createRequestHandler } from "./app.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -36,7 +37,8 @@ export function createLegoSearchServer() {
       browserClients: createBrowserMarketplaceClients()
     }),
     resolveLegoSet: createOfficialLegoSetResolver({
-      fetchProductPages: createOfficialLegoPriceBrowserFetcher()
+      fetchProductPages: createOfficialLegoPriceBrowserFetcher(),
+      resolveExchangeRates: createTaiwanBankExchangeRateResolver()
     })
   });
 

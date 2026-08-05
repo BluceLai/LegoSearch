@@ -11,6 +11,7 @@ const openInstructions = document.querySelector("#open-instructions");
 const summaryTitle = document.querySelector("#summary-title");
 const summaryDetail = document.querySelector("#summary-detail");
 const sortSelect = document.querySelector("#sort");
+const discountFloorSelect = document.querySelector("#discount-floor");
 const showThumbnails = document.querySelector("#show-thumbnails");
 const verifyIopenButton = document.querySelector("#verify-iopen");
 const template = document.querySelector("#result-card-template");
@@ -34,6 +35,7 @@ form.addEventListener("submit", async (event) => {
 });
 
 sortSelect.addEventListener("change", renderResults);
+discountFloorSelect.addEventListener("change", renderResults);
 showThumbnails.addEventListener("change", renderResults);
 verifyIopenButton.addEventListener("click", openIopenVerification);
 
@@ -167,7 +169,8 @@ function renderResults() {
     results,
     platformIds: selectedPlatformIds,
     sort: sortSelect.value,
-    officialReferenceTwd
+    officialReferenceTwd,
+    minimumDiscount: Number(discountFloorSelect.value)
   });
   resultsNode.classList.toggle("list-mode", !showThumbnails.checked);
 
@@ -213,7 +216,8 @@ function formatOfficialPrice(price) {
 
   const currency = price.currency === "USD" ? "\u7f8e\u5143" : "\u6b50\u5143";
   const symbol = price.currency === "USD" ? "US$" : "EUR ";
-  return `${currency} ${symbol}${price.amount.toLocaleString("en-US", { maximumFractionDigits: 2 })} (\u7d04 ${money.format(price.convertedTwd)})`;
+  const converted = price.convertedTwd === null ? "\u53f0\u9280\u532f\u7387\u66ab\u6642\u7121\u6cd5\u53d6\u5f97" : `\u53f0\u9280 ${price.exchangeRate}，\u7d04 ${money.format(price.convertedTwd)}`;
+  return `${currency} ${symbol}${price.amount.toLocaleString("en-US", { maximumFractionDigits: 2 })} (${converted})`;
 }
 
 function renderLowestResults(groups) {

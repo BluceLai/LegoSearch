@@ -4,11 +4,11 @@ const officialPriceLocales = [
   { locale: "en-us", currency: "USD" },
   { locale: "en-de", currency: "EUR" }
 ];
-const fixedExchangeRate = 40;
 
 export function createOfficialLegoSetResolver({
   fetchImpl = fetch,
   fetchProductPages = null,
+  resolveExchangeRates = async () => null,
   maxEntries = 200
 } = {}) {
   const cache = new Map();
@@ -20,11 +20,15 @@ export function createOfficialLegoSetResolver({
     }
 
     if (cache.has(setNumber)) {
-      return cache.get(setNumber);
+      return withExchangeRates(cache.get(setNumber), resolveExchangeRates);
     }
 
     if (!inFlight.has(setNumber)) {
-      inFlight.set(setNumber, fetchOfficialSet({ setNumber, fetchImpl, fetchProductPages }));
+      inFlight.set(setNumber, fetchOfficialSet({
+        setNumber,
+        fetchImpl,
+        fetchProductPages
+      }));
     }
 
     try {
@@ -35,7 +39,7 @@ export function createOfficialLegoSetResolver({
           cache.delete(cache.keys().next().value);
         }
       }
-      return set;
+      return set ? withExchangeRates(set, resolveExchangeRates) : null;
     } finally {
       inFlight.delete(setNumber);
     }
@@ -75,7 +79,7 @@ async function fetchOfficialSet({ setNumber, fetchImpl, fetchProductPages }) {
   const renderedPages = missingRequests.length && fetchProductPages
     ? await fetchProductPages(missingRequests.map((request) => request.url))
     : new Map();
-  const officialPrices = priceRequests.map((request, index) => {
+  const unconvertedPrices = priceRequests.map((request, index) => {
     const directPrice = directPrices[index];
     if (directPrice) {
       return directPrice;
@@ -86,12 +90,10 @@ async function fetchOfficialSet({ setNumber, fetchImpl, fetchProductPages }) {
       html: renderedPages.get(request.url)
     });
   }).filter(Boolean);
-
   return {
     setNumber,
     names,
-    officialPrices,
-    officialReferenceTwd: selectReferencePrice(officialPrices)?.convertedTwd ?? null
+    officialPrices: unconvertedPrices
   };
 }
 
@@ -149,9 +151,49 @@ function priceFromHtml({ url, currency, html }) {
   return {
     currency,
     amount,
-    convertedTwd: currency === "TWD" ? amount : Math.round(amount * fixedExchangeRate),
+    convertedTwd: currency === "TWD" ? amount : null,
     url
   };
+}
+
+async function safelyResolveExchangeRates(resolveExchangeRates) {
+  try {
+    return await resolveExchangeRates();
+  } catch {
+    return null;
+  }
+}
+
+async function withExchangeRates(set, resolveExchangeRates) {
+  const exchangeRateData = set.officialPrices.some((price) => price.currency !== "TWD")
+    ? await safelyResolveExchangeRates(resolveExchangeRates)
+    : null;
+  const officialPrices = applyExchangeRates(set.officialPrices, exchangeRateData?.rates || {});
+
+  return {
+    ...set,
+    officialPrices,
+    officialReferenceTwd: selectReferencePrice(officialPrices)?.convertedTwd ?? null,
+    exchangeRateInfo: exchangeRateData ? {
+      quotedAt: exchangeRateData.quotedAt || null,
+      sourceUrl: exchangeRateData.sourceUrl || null
+    } : null
+  };
+}
+
+function applyExchangeRates(prices, rates) {
+  return prices.map((price) => {
+    const exchangeRate = rates[price.currency];
+    if (!Number.isFinite(exchangeRate)) {
+      return price;
+    }
+
+    return {
+      ...price,
+      convertedTwd: Math.round(price.amount * exchangeRate),
+      exchangeRate
+    };
+  });
 }
 
 function extractHeading(html) {

@@ -50,6 +50,21 @@ test("omits implausibly low prices from the platform summary without removing de
   assert.equal(group.lowestResult.title, "Eligible");
 });
 
+test("allows the summary filter to be disabled", () => {
+  const [group] = organizeResults({
+    platformIds: ["iopen"],
+    sort: "price-asc",
+    officialReferenceTwd: 16000,
+    minimumDiscount: 0,
+    results: [
+      result({ platformId: "iopen", platformName: "iOPEN Mall", title: "Lowest", price: 18 }),
+      result({ platformId: "iopen", platformName: "iOPEN Mall", title: "Higher", price: 5000 })
+    ]
+  });
+
+  assert.equal(group.lowestResult.title, "Lowest");
+});
+
 function result(overrides) {
   return {
     platformId: "momo",

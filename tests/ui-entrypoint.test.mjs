@@ -12,6 +12,9 @@ test("web entrypoint keeps local assets relative and includes a startup notice",
   assert.match(html, /id="lowest-results"/);
   assert.match(html, /id="show-thumbnails"/);
   assert.doesNotMatch(html, /id="show-thumbnails"[^>]*checked/);
+  assert.match(html, /id="discount-floor"/);
+  assert.match(html, /option value="0">/);
+  assert.match(html, /option value="0\.3" selected/);
   assert.match(html, /id="verify-iopen"/);
   assert.match(html, /class="group-toggle"/);
   assert.match(html, /id="platform-group-template"/);
