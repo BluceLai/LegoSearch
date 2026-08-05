@@ -4,6 +4,7 @@ const form = document.querySelector("#search-form");
 const queryInput = document.querySelector("#query");
 const platformsNode = document.querySelector("#platforms");
 const resultsNode = document.querySelector("#results");
+const lowestResultsNode = document.querySelector("#lowest-results");
 const alertsNode = document.querySelector("#alerts");
 const openInstructions = document.querySelector("#open-instructions");
 const summaryTitle = document.querySelector("#summary-title");
@@ -16,6 +17,7 @@ const platformGroupTemplate = document.querySelector("#platform-group-template")
 
 let results = [];
 let selectedPlatformIds = [];
+let expandedPlatformIds = new Set();
 
 const money = new Intl.NumberFormat("zh-TW", {
   style: "currency",
@@ -97,6 +99,7 @@ async function search() {
 
     results = body.results || [];
     selectedPlatformIds = body.platformIds || [];
+    expandedPlatformIds = new Set();
     const priced = results.filter((item) => item.price !== null).length;
     summaryTitle.textContent = `${results.length} \u7b46\u7d50\u679c`;
     summaryDetail.textContent = `${priced} \u7b46\u542b\u89e3\u6790\u50f9\u683c\u3002\u5e73\u53f0\u64cb\u4e0b\u81ea\u52d5\u64f7\u53d6\u6642\u6703\u4fdd\u7559\u641c\u5c0b\u9023\u7d50\u3002`;
@@ -156,18 +159,81 @@ function renderResults() {
   resultsNode.classList.toggle("list-mode", !showThumbnails.checked);
 
   if (!groups.length) {
+    renderLowestResults([]);
     renderEmpty("\u6c92\u6709\u53ef\u986f\u793a\u7684\u7d50\u679c\u3002");
     return;
   }
 
+  renderLowestResults(groups);
   resultsNode.replaceChildren(...groups.map(renderPlatformGroup));
+}
+
+function renderLowestResults(groups) {
+  lowestResultsNode.hidden = groups.length === 0;
+
+  if (!groups.length) {
+    lowestResultsNode.replaceChildren();
+    return;
+  }
+
+  const title = document.createElement("h2");
+  title.textContent = "\u5404\u5e73\u53f0\u6700\u4f4e\u50f9";
+  const grid = document.createElement("div");
+  grid.className = "lowest-grid";
+  grid.replaceChildren(...groups.map(renderLowestResult));
+  lowestResultsNode.replaceChildren(title, grid);
+}
+
+function renderLowestResult(group) {
+  const node = document.createElement("article");
+  node.className = "lowest-result";
+  const platform = document.createElement("strong");
+  platform.textContent = group.platformName;
+  const detail = document.createElement("p");
+  const price = document.createElement("strong");
+
+  if (group.lowestResult) {
+    detail.textContent = group.lowestResult.title;
+    price.textContent = money.format(group.lowestResult.price);
+    const link = document.createElement("a");
+    link.href = group.lowestResult.url;
+    link.target = "_blank";
+    link.rel = "noreferrer";
+    link.textContent = "\u67e5\u770b";
+    node.append(platform, detail, price, link);
+  } else {
+    detail.textContent = "\u5c1a\u7121\u53ef\u6bd4\u50f9\u683c";
+    node.append(platform, detail);
+  }
+
+  return node;
 }
 
 function renderPlatformGroup(group) {
   const node = platformGroupTemplate.content.cloneNode(true);
+  const results = node.querySelector(".platform-results");
+  const toggle = node.querySelector(".group-toggle");
   node.querySelector("h2").textContent = group.platformName;
   node.querySelector(".platform-count").textContent = `${group.results.length} \u7b46`;
-  node.querySelector(".platform-results").replaceChildren(...group.results.map(renderCard));
+
+  const renderGroupResults = () => {
+    const expanded = expandedPlatformIds.has(group.platformId);
+    results.hidden = !expanded;
+    toggle.setAttribute("aria-expanded", String(expanded));
+    toggle.textContent = expanded ? "\u6536\u5408\u7d50\u679c" : "\u5c55\u958b\u7d50\u679c";
+    results.replaceChildren(...(expanded ? group.results.map(renderCard) : []));
+  };
+
+  toggle.addEventListener("click", () => {
+    if (expandedPlatformIds.has(group.platformId)) {
+      expandedPlatformIds.delete(group.platformId);
+    } else {
+      expandedPlatformIds.add(group.platformId);
+    }
+    renderGroupResults();
+  });
+
+  renderGroupResults();
   return node;
 }
 
@@ -183,7 +249,7 @@ function renderCard(item) {
   const time = node.querySelector("time");
   const link = node.querySelector("a");
 
-  if (item.imageUrl) {
+  if (showThumbnails.checked && item.imageUrl) {
     image.src = item.imageUrl;
     imageFallback.hidden = true;
   } else {

@@ -46,7 +46,7 @@
             </select>
           </label>
           <label class="thumbnail-toggle">
-            <input id="show-thumbnails" type="checkbox" checked />
+            <input id="show-thumbnails" type="checkbox" />
             <span>&#x986f;&#x793a;&#x7e2e;&#x5716;</span>
           </label>
           <button id="verify-iopen" class="secondary-button" type="button">&#x9a57;&#x8b49; iOPEN Mall</button>
@@ -55,6 +55,7 @@
 
       <section id="alerts" class="alerts" hidden></section>
       <p id="open-instructions" class="startup-notice" hidden></p>
+      <section id="lowest-results" class="lowest-results" hidden></section>
       <section id="results" class="results"></section>
     </main>
 
@@ -83,10 +84,13 @@
     <template id="platform-group-template">
       <section class="platform-group">
         <header class="platform-heading">
-          <h2></h2>
-          <span class="platform-count"></span>
+          <div class="platform-heading-info">
+            <h2></h2>
+            <span class="platform-count"></span>
+          </div>
+          <button class="group-toggle" type="button"></button>
         </header>
-        <div class="platform-results"></div>
+        <div class="platform-results" hidden></div>
       </section>
     </template>
 

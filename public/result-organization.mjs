@@ -14,7 +14,15 @@ export function organizeResults({ results, platformIds, sort }) {
   const preferredOrder = new Map(platformIds.map((platformId, index) => [platformId, index]));
 
   return [...groups.values()]
-    .map((group) => ({ ...group, results: sortResults(group.results, sort) }))
+    .map((group) => {
+      const sortedResults = sortResults(group.results, sort);
+
+      return {
+        ...group,
+        results: sortedResults,
+        lowestResult: findLowestPricedResult(sortedResults)
+      };
+    })
     .sort((left, right) => {
       if (sort === "platform") {
         return left.platformName.localeCompare(right.platformName, "zh-Hant");
@@ -23,6 +31,16 @@ export function organizeResults({ results, platformIds, sort }) {
       return (preferredOrder.get(left.platformId) ?? Number.MAX_SAFE_INTEGER)
         - (preferredOrder.get(right.platformId) ?? Number.MAX_SAFE_INTEGER);
     });
+}
+
+function findLowestPricedResult(results) {
+  return results.reduce((lowest, result) => {
+    if (result.price === null || (lowest && lowest.price <= result.price)) {
+      return lowest;
+    }
+
+    return result;
+  }, null);
 }
 
 function sortResults(results, sort) {
