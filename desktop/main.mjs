@@ -1,5 +1,6 @@
 import { app, BrowserWindow, shell } from "electron";
-import { resolveDesktopDataDir } from "./data-directory.mjs";
+import { join } from "node:path";
+import { migrateBrowserProfiles, resolveDesktopDataDir } from "./data-directory.mjs";
 
 let mainWindow;
 let server;
@@ -18,11 +19,15 @@ app.on("before-quit", () => {
 });
 
 async function createMainWindow() {
-  process.env.LEGO_SEARCH_DATA_DIR = resolveDesktopDataDir({
+  const logDir = resolveDesktopDataDir({
     isPackaged: app.isPackaged,
     portableExecutableDir: process.env.PORTABLE_EXECUTABLE_DIR,
     userDataDir: app.getPath("userData")
   });
+  const browserDataDir = join(app.getPath("userData"), "browser-profiles");
+  await migrateBrowserProfiles({ logDir, browserDataDir });
+  process.env.LEGO_SEARCH_DATA_DIR = logDir;
+  process.env.LEGO_SEARCH_BROWSER_DATA_DIR = browserDataDir;
   process.env.LEGO_SEARCH_VERSION = app.getVersion();
   const { startLegoSearchServer } = await import("../src/http/server.mjs");
   const running = await startLegoSearchServer({ port: 0 });
