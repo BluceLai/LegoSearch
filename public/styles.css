@@ -111,6 +111,10 @@ h1 {
   background: #fff;
 }
 
+.recent-searches {
+  color: var(--muted);
+}
+
 .field input:focus,
 .field select:focus {
   outline: 3px solid rgba(31, 111, 184, 0.15);

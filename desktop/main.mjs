@@ -1,4 +1,5 @@
 import { app, BrowserWindow, shell } from "electron";
+import { resolveDesktopDataDir } from "./data-directory.mjs";
 
 let mainWindow;
 let server;
@@ -17,7 +18,12 @@ app.on("before-quit", () => {
 });
 
 async function createMainWindow() {
-  process.env.LEGO_SEARCH_DATA_DIR = app.getPath("userData");
+  process.env.LEGO_SEARCH_DATA_DIR = resolveDesktopDataDir({
+    isPackaged: app.isPackaged,
+    portableExecutableDir: process.env.PORTABLE_EXECUTABLE_DIR,
+    userDataDir: app.getPath("userData")
+  });
+  process.env.LEGO_SEARCH_VERSION = app.getVersion();
   const { startLegoSearchServer } = await import("../src/http/server.mjs");
   const running = await startLegoSearchServer({ port: 0 });
   server = running.server;

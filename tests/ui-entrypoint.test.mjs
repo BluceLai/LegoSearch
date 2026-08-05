@@ -18,7 +18,7 @@ test("web entrypoint keeps local assets relative and includes a startup notice",
   assert.match(html, /id="verify-iopen"/);
   assert.match(html, /class="group-toggle"/);
   assert.match(html, /id="platform-group-template"/);
-  assert.match(html, /id="recent-queries"/);
+  assert.match(html, /id="recent-searches"/);
   assert.match(html, /id="search-tab"/);
   assert.match(html, /id="history-tab"/);
   assert.match(html, /id="history-view"/);

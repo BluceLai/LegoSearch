@@ -2,7 +2,7 @@ import { organizeResults } from "./result-organization.mjs";
 
 const form = document.querySelector("#search-form");
 const queryInput = document.querySelector("#query");
-const recentQueriesNode = document.querySelector("#recent-queries");
+const recentSearchesSelect = document.querySelector("#recent-searches");
 const platformsNode = document.querySelector("#platforms");
 const searchView = document.querySelector("#search-view");
 const historyView = document.querySelector("#history-view");
@@ -45,6 +45,11 @@ sortSelect.addEventListener("change", renderResults);
 discountFloorSelect.addEventListener("change", renderResults);
 showThumbnails.addEventListener("change", renderResults);
 verifyIopenButton.addEventListener("click", openIopenVerification);
+recentSearchesSelect.addEventListener("change", async () => {
+  if (!recentSearchesSelect.value) return;
+  queryInput.value = recentSearchesSelect.value;
+  await search();
+});
 searchTab.addEventListener("click", () => setActiveView("search"));
 historyTab.addEventListener("click", () => setActiveView("history"));
 
@@ -166,19 +171,16 @@ function setActiveView(view) {
 }
 
 function renderRecentQueries() {
-  const seen = new Set();
-  const options = history.flatMap((entry) => {
-    if (seen.has(entry.query)) {
-      return [];
-    }
-
-    seen.add(entry.query);
+  const options = history.slice(0, 20).map((entry) => {
     const option = document.createElement("option");
     option.value = entry.query;
-    option.label = entry.setNumber;
-    return [option];
+    option.textContent = `${entry.setNumber}  ${entry.query}`;
+    return option;
   });
-  recentQueriesNode.replaceChildren(...options);
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = `\u6700\u8fd1 ${options.length || 20} \u7b46\u67e5\u8a62`;
+  recentSearchesSelect.replaceChildren(placeholder, ...options);
 }
 
 function renderHistory() {

@@ -10,6 +10,7 @@ import { createOfficialLegoPriceBrowserFetcher } from "../infrastructure/officia
 import { createOfficialLegoSetResolver } from "../infrastructure/official-lego-set-resolver.mjs";
 import { createPriceHistoryRepository } from "../infrastructure/price-history-repository.mjs";
 import { createTaiwanBankExchangeRateResolver } from "../infrastructure/taiwan-bank-exchange-rate.mjs";
+import { recordVersionStart } from "../infrastructure/version-history.mjs";
 import { createRequestHandler } from "./app.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -17,6 +18,7 @@ const publicDir = join(__dirname, "..", "..", "public");
 const defaultDataDir = join(__dirname, "..", "..", "data");
 
 export async function startLegoSearchServer({ port = 5178, host = "127.0.0.1" } = {}) {
+  await safelyRecordVersionStart();
   const server = createLegoSearchServer();
 
   await new Promise((resolve, reject) => {
@@ -32,6 +34,17 @@ export async function startLegoSearchServer({ port = 5178, host = "127.0.0.1" } 
     server,
     port: typeof address === "object" && address ? address.port : port
   };
+}
+
+async function safelyRecordVersionStart() {
+  try {
+    await recordVersionStart({
+      filePath: join(resolveDataDir(), "version-history.json"),
+      version: process.env.LEGO_SEARCH_VERSION
+    });
+  } catch {
+    // Local history remains optional when the selected directory cannot be written.
+  }
 }
 
 export function createLegoSearchServer() {

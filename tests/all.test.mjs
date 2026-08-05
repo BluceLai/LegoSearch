@@ -9,6 +9,7 @@ import "./taiwan-bank-exchange-rate.test.mjs";
 import "./official-lego-price-browser.test.mjs";
 import "./browser-marketplace-clients.test.mjs";
 import "./desktop-packaging.test.mjs";
+import "./desktop-data-directory.test.mjs";
 import "./iopen-verifier.test.mjs";
 import "./result-organization.test.mjs";
 import "./release-artifacts.test.mjs";
