@@ -10,7 +10,7 @@ test("normalizes a user query and defaults to every supported platform", () => {
 
   assert.deepEqual(query, {
     text: "lego 10305",
-    platformIds: ["shopee", "momo", "pchome", "coupang"]
+    platformIds: ["iopen", "momo", "pchome", "coupang"]
   });
 });
 

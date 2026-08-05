@@ -13,7 +13,7 @@ test("GET /api/platforms returns supported marketplace metadata", async () => {
     assert.equal(response.status, 200);
     assert.deepEqual(
       body.platforms.map((platform) => platform.id),
-      ["shopee", "momo", "pchome", "coupang"]
+      ["iopen", "momo", "pchome", "coupang"]
     );
   } finally {
     await close();

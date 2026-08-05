@@ -36,7 +36,7 @@ test("searches selected platforms and sorts priced results before search links",
 test("turns platform failures into fallback search-link results", async () => {
   const aggregator = createSearchAggregator({
     clients: {
-      shopee: async () => {
+      iopen: async () => {
         throw new Error("HTTP 403");
       }
     }
@@ -44,21 +44,21 @@ test("turns platform failures into fallback search-link results", async () => {
 
   const response = await aggregator.search({
     text: "LEGO 75367",
-    platforms: "shopee"
+    platforms: "iopen"
   });
 
   assert.deepEqual(response.errors, [
     {
-      platformId: "shopee",
-      platformName: "\u8766\u76ae",
+      platformId: "iopen",
+      platformName: "iOPEN Mall",
       message: "HTTP 403"
     }
   ]);
   assert.equal(response.results.length, 1);
-  assert.equal(response.results[0].platformId, "shopee");
+  assert.equal(response.results[0].platformId, "iopen");
   assert.equal(response.results[0].source, "search-link");
   assert.equal(response.results[0].price, null);
-  assert.equal(response.results[0].url, "https://shopee.tw/search?keyword=LEGO+75367");
+  assert.equal(response.results[0].url, "https://mall.iopenmall.tw/iopen/index.php?prod_keyword=LEGO+75367&action=store_product_search");
 });
 
 test("keeps only exact model-number matches while retaining platform search links", async () => {

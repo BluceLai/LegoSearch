@@ -4,17 +4,17 @@ import { organizeResults } from "../public/result-organization.mjs";
 
 test("groups results by the selected marketplace and sorts prices within each group", () => {
   const groups = organizeResults({
-    platformIds: ["shopee", "coupang"],
+    platformIds: ["iopen", "coupang"],
     sort: "price-asc",
     results: [
       result({ platformId: "coupang", platformName: "\u9177\u6f8e", title: "Coupang 60500", price: 625 }),
-      result({ platformId: "shopee", platformName: "\u8766\u76ae", title: "Shopee link", price: null }),
+      result({ platformId: "iopen", platformName: "iOPEN Mall", title: "iOPEN Mall link", price: null }),
       result({ platformId: "coupang", platformName: "\u9177\u6f8e", title: "Coupang 60500 higher", price: 999 })
     ]
   });
 
   assert.deepEqual(groups.map((group) => [group.platformId, group.results.map((item) => item.title)]), [
-    ["shopee", ["Shopee link"]],
+    ["iopen", ["iOPEN Mall link"]],
     ["coupang", ["Coupang 60500", "Coupang 60500 higher"]]
   ]);
 });

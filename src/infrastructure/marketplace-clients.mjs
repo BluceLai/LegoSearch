@@ -2,7 +2,7 @@ import { createMarketplaceResult } from "../domain/search-result.mjs";
 
 export function createMarketplaceClients({ fetchImpl = fetch, browserClients = {} } = {}) {
   const directClients = {
-    shopee: createShopeeClient(fetchImpl),
+    iopen: browserClients.iopen || createHtmlClient(fetchImpl),
     momo: createHtmlClient(fetchImpl),
     coupang: createHtmlClient(fetchImpl),
     pchome: createPchomeClient(fetchImpl)
@@ -29,42 +29,6 @@ function withBrowserFallback(client, browserClient) {
 
       return browserClient(input);
     }
-  };
-}
-
-function createShopeeClient(fetchImpl) {
-  return async function searchShopee({ query, platform, searchedAt }) {
-    const url = new URL("https://shopee.tw/api/v4/search/search_items");
-    url.searchParams.set("by", "relevancy");
-    url.searchParams.set("keyword", query);
-    url.searchParams.set("limit", "20");
-    url.searchParams.set("newest", "0");
-    url.searchParams.set("order", "desc");
-    url.searchParams.set("page_type", "search");
-    url.searchParams.set("scenario", "PAGE_GLOBAL_SEARCH");
-    url.searchParams.set("version", "2");
-
-    const response = await fetchWithBrowserHeaders(fetchImpl, url, "application/json");
-    if (!response.ok) {
-      throw new Error(`Shopee HTTP ${response.status}`);
-    }
-
-    const payload = await response.json();
-    const items = Array.isArray(payload.items) ? payload.items : [];
-
-    return items.map((entry) => {
-      const item = entry.item_basic || entry;
-      return createMarketplaceResult({
-        platform,
-        title: cleanText(item.name || "Shopee product"),
-        price: shopeePrice(item.price_min ?? item.price),
-        url: item.shopid && item.itemid
-          ? `https://shopee.tw/product/${item.shopid}/${item.itemid}`
-          : platform.buildSearchUrl(query),
-        imageUrl: item.image ? `https://down-tw.img.susercontent.com/file/${item.image}` : null,
-        fetchedAt: searchedAt
-      });
-    }).filter((product) => product.title && product.price !== null);
   };
 }
 
@@ -194,15 +158,6 @@ function cleanText(value) {
 function toPrice(value) {
   const price = Number.parseInt(String(value).replace(/[^\d]/g, ""), 10);
   return Number.isFinite(price) ? price : null;
-}
-
-function shopeePrice(value) {
-  const price = toPrice(value);
-  if (price === null) {
-    return null;
-  }
-
-  return price > 100000 ? Math.round(price / 100000) : price;
 }
 
 function imageUrl(product) {

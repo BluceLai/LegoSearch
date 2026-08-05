@@ -6,7 +6,7 @@ test("lists the Taiwan marketplaces supported by the product", () => {
   assert.deepEqual(
     listPlatforms().map((platform) => [platform.id, platform.name]),
     [
-      ["shopee", "\u8766\u76ae"],
+      ["iopen", "iOPEN Mall"],
       ["momo", "MOMO"],
       ["pchome", "PChome"],
       ["coupang", "\u9177\u6f8e"]
@@ -16,8 +16,8 @@ test("lists the Taiwan marketplaces supported by the product", () => {
 
 test("builds official marketplace search URLs for a keyword", () => {
   assert.equal(
-    getPlatform("shopee").buildSearchUrl("LEGO 10305"),
-    "https://shopee.tw/search?keyword=LEGO+10305"
+    getPlatform("iopen").buildSearchUrl("LEGO 10305"),
+    "https://mall.iopenmall.tw/iopen/index.php?prod_keyword=LEGO+10305&action=store_product_search"
   );
 
   assert.equal(

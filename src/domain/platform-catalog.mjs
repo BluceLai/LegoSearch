@@ -1,10 +1,11 @@
 const platformDefinitions = [
   {
-    id: "shopee",
-    name: "\u8766\u76ae",
-    homepage: "https://shopee.tw",
-    searchPath: "/search",
-    searchParam: "keyword"
+    id: "iopen",
+    name: "iOPEN Mall",
+    homepage: "https://mall.iopenmall.tw",
+    searchPath: "/iopen/index.php",
+    searchParam: "prod_keyword",
+    fixedParams: { action: "store_product_search" }
   },
   {
     id: "momo",

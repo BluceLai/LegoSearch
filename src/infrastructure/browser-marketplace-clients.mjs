@@ -15,7 +15,7 @@ export function createBrowserMarketplaceClients({ createContext = createEdgeCont
   const schedule = createBrowserSearchQueue();
 
   return {
-    shopee: createBrowserClient("shopee", createContext, schedule),
+    iopen: createBrowserClient("iopen", createContext, schedule),
     coupang: createBrowserClient("coupang", createContext, schedule)
   };
 }
@@ -31,6 +31,11 @@ function createBrowserClient(platformId, createContext, schedule) {
           waitUntil: "domcontentloaded",
           timeout: 45_000
         });
+        if (platformId === "iopen"
+          && typeof page.url === "function"
+          && page.url().includes("validate.perfdrive.com")) {
+          throw new Error("iOPEN Mall\u76ee\u524d\u8981\u6c42\u5e73\u53f0\u9a57\u8b49\uff0c\u5df2\u4fdd\u7559\u641c\u5c0b\u9023\u7d50\u3002");
+        }
         try {
           await page.waitForSelector(productLinkSelector(platformId), { timeout: 30_000 });
         } catch {
@@ -80,9 +85,11 @@ async function createEdgeContext() {
 }
 
 function productLinkSelector(platformId) {
-  return platformId === "coupang"
-    ? 'a[href*="/products/"]'
-    : 'a[href*="/product/"]';
+  if (platformId === "coupang") {
+    return 'a[href*="/products/"]';
+  }
+
+  return 'ul.gh_SearchBox > li a[href*="action=product_detail"]';
 }
 
 function extractVisibleProducts({ platformId }) {
@@ -104,6 +111,32 @@ function extractVisibleProducts({ platformId }) {
       .filter((price) => price !== null && price >= 50);
     return prices.at(-1) ?? null;
   };
+
+  if (platformId === "iopen") {
+    const seen = new Set();
+
+    return [...document.querySelectorAll("ul.gh_SearchBox > li")].map((card) => {
+      const image = card.querySelector('a[href*="action=product_detail"] img');
+      const link = image?.closest("a") || card.querySelector('a[href*="action=product_detail"]');
+      const title = cleanText(image?.alt || link?.textContent || "");
+      const url = link?.getAttribute("href") || "";
+      const key = `${title}:${url}`;
+      const price = toPrice((card.innerText || "").match(/\$\s*([0-9][0-9,]*)/)?.[1]);
+
+      if (!title || !url || price === null || seen.has(key)) {
+        return null;
+      }
+
+      seen.add(key);
+      return {
+        title,
+        price,
+        url,
+        imageUrl: image?.currentSrc || image?.src || null
+      };
+    }).filter(Boolean);
+  }
+
   const links = [...document.querySelectorAll(platformId === "coupang"
     ? 'a[href*="/products/"]'
     : 'a[href*="/product/"]')];
