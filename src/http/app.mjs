@@ -12,7 +12,7 @@ const contentTypes = {
   ".json": "application/json; charset=utf-8"
 };
 
-export function createRequestHandler({ aggregator, publicDir, iopenVerifier }) {
+export function createRequestHandler({ aggregator, publicDir, iopenVerifier, historyRepository = null }) {
   return async function requestHandler(request, response) {
     const url = new URL(request.url || "/", `http://${request.headers.host || "localhost"}`);
 
@@ -29,7 +29,15 @@ export function createRequestHandler({ aggregator, publicDir, iopenVerifier }) {
           text: url.searchParams.get("q") || "",
           platforms: url.searchParams.get("platforms") || undefined
         });
+        await safelyRecordHistory(historyRepository, payload);
         sendJson(response, 200, payload);
+        return;
+      }
+
+      if (url.pathname === "/api/history") {
+        sendJson(response, 200, {
+          history: historyRepository ? await historyRepository.list() : []
+        });
         return;
       }
 
@@ -50,6 +58,14 @@ export function createRequestHandler({ aggregator, publicDir, iopenVerifier }) {
       });
     }
   };
+}
+
+async function safelyRecordHistory(historyRepository, payload) {
+  try {
+    await historyRepository?.record(payload);
+  } catch {
+    // Search results remain available even when the optional local history file cannot be updated.
+  }
 }
 
 function sendJson(response, status, payload) {

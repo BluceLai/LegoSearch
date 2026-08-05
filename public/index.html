@@ -22,7 +22,8 @@
         <form id="search-form" class="search-form">
           <label class="field">
             <span>&#x95dc;&#x9375;&#x5b57;&#x6216;&#x578b;&#x865f;</span>
-            <input id="query" type="search" value="10305" autocomplete="off" />
+            <input id="query" type="search" value="10305" list="recent-queries" autocomplete="off" />
+            <datalist id="recent-queries"></datalist>
           </label>
 
           <div id="platforms" class="platform-grid"></div>
@@ -31,6 +32,12 @@
         </form>
       </section>
 
+      <nav class="view-tabs" role="tablist" aria-label="&#x6aa2;&#x8996;">
+        <button id="search-tab" class="view-tab" type="button" role="tab" aria-selected="true" aria-controls="search-view">&#x50f9;&#x683c;&#x641c;&#x5c0b;</button>
+        <button id="history-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="history-view">&#x67e5;&#x8a62;&#x7d00;&#x9304;</button>
+      </nav>
+
+      <section id="search-view">
       <section class="summary-bar">
         <div>
           <strong id="summary-title">&#x5c31;&#x7dd2;</strong>
@@ -72,6 +79,12 @@
       <p id="open-instructions" class="startup-notice" hidden></p>
       <section id="lowest-results" class="lowest-results" hidden></section>
       <section id="results" class="results"></section>
+      </section>
+
+      <section id="history-view" class="history-view" role="tabpanel" aria-labelledby="history-tab" hidden>
+        <h2>&#x67e5;&#x8a62;&#x7d00;&#x9304;</h2>
+        <section id="history-results" class="history-results"></section>
+      </section>
     </main>
 
     <template id="result-card-template">

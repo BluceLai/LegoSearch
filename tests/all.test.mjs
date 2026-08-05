@@ -4,6 +4,7 @@ import "./platform-catalog.test.mjs";
 import "./search-aggregator.test.mjs";
 import "./official-lego-set-resolver.test.mjs";
 import "./brickeconomy-retail-price.test.mjs";
+import "./price-history-repository.test.mjs";
 import "./taiwan-bank-exchange-rate.test.mjs";
 import "./official-lego-price-browser.test.mjs";
 import "./browser-marketplace-clients.test.mjs";

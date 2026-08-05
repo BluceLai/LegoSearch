@@ -55,6 +55,52 @@ test("GET /api/search delegates to the aggregator and returns JSON", async () =>
   }
 });
 
+test("records a completed search and returns grouped daily price history", async () => {
+  const recorded = [];
+  const history = [{
+    setNumber: "10305",
+    query: "LEGO 10305",
+    dates: [{
+      date: "2026-08-05",
+      searchedAt: "2026-08-05T04:00:00.000Z",
+      platforms: [{ platformId: "momo", platformName: "MOMO", lowestPrice: 11999, highestPrice: 12999 }]
+    }]
+  }];
+  const { baseUrl, close } = await startTestServer({
+    aggregator: {
+      async search() {
+        return {
+          query: "LEGO 10305",
+          platformIds: ["momo"],
+          searchedAt: "2026-08-05T04:00:00.000Z",
+          results: [{ platformId: "momo", platformName: "MOMO", price: 11999 }],
+          errors: []
+        };
+      }
+    },
+    historyRepository: {
+      async record(search) {
+        recorded.push(search);
+      },
+      async list() {
+        return history;
+      }
+    }
+  });
+
+  try {
+    const searchResponse = await fetch(`${baseUrl}/api/search?q=10305&platforms=momo`);
+    const historyResponse = await fetch(`${baseUrl}/api/history`);
+
+    assert.equal(searchResponse.status, 200);
+    assert.deepEqual(recorded.map((search) => search.query), ["LEGO 10305"]);
+    assert.equal(historyResponse.status, 200);
+    assert.deepEqual(await historyResponse.json(), { history });
+  } finally {
+    await close();
+  }
+});
+
 test("serves browser modules with a JavaScript content type", async () => {
   const { baseUrl, close } = await startTestServer({
     publicDir: new URL("../public/", import.meta.url)
@@ -99,7 +145,8 @@ async function startTestServer(options = {}) {
       }
     },
     publicDir: options.publicDir || new URL(".", import.meta.url),
-    iopenVerifier: options.iopenVerifier
+    iopenVerifier: options.iopenVerifier,
+    historyRepository: options.historyRepository
   }));
 
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));

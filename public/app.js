@@ -2,7 +2,13 @@ import { organizeResults } from "./result-organization.mjs";
 
 const form = document.querySelector("#search-form");
 const queryInput = document.querySelector("#query");
+const recentQueriesNode = document.querySelector("#recent-queries");
 const platformsNode = document.querySelector("#platforms");
+const searchView = document.querySelector("#search-view");
+const historyView = document.querySelector("#history-view");
+const searchTab = document.querySelector("#search-tab");
+const historyTab = document.querySelector("#history-tab");
+const historyResultsNode = document.querySelector("#history-results");
 const resultsNode = document.querySelector("#results");
 const lowestResultsNode = document.querySelector("#lowest-results");
 const officialPricesNode = document.querySelector("#official-prices");
@@ -22,6 +28,7 @@ let selectedPlatformIds = [];
 let expandedPlatformIds = new Set();
 let officialPrices = [];
 let officialReferenceTwd = null;
+let history = [];
 
 const money = new Intl.NumberFormat("zh-TW", {
   style: "currency",
@@ -38,6 +45,8 @@ sortSelect.addEventListener("change", renderResults);
 discountFloorSelect.addEventListener("change", renderResults);
 showThumbnails.addEventListener("change", renderResults);
 verifyIopenButton.addEventListener("click", openIopenVerification);
+searchTab.addEventListener("click", () => setActiveView("search"));
+historyTab.addEventListener("click", () => setActiveView("history"));
 
 await boot();
 
@@ -69,6 +78,7 @@ async function boot() {
     }));
 
     renderEmpty("\u53ef\u4ee5\u958b\u59cb\u641c\u5c0b\u3002");
+    await refreshHistory();
   } catch {
     showStartupError("\u7121\u6cd5\u9023\u4e0a LegoSearch \u670d\u52d9\u3002\u8acb\u57f7\u884c start-legosearch.bat \u5f8c\u91cd\u65b0\u6574\u7406\u3002");
   }
@@ -118,6 +128,7 @@ async function search() {
 
     renderOfficialPrices();
     renderResults();
+    await refreshHistory();
   } catch (error) {
     results = [];
     officialPrices = [];
@@ -127,6 +138,112 @@ async function search() {
     summaryDetail.textContent = error.message;
     renderEmpty("\u6c92\u6709\u53ef\u986f\u793a\u7684\u7d50\u679c\u3002");
   }
+}
+
+async function refreshHistory() {
+  try {
+    const response = await fetch("/api/history");
+    if (!response.ok) {
+      throw new Error("History unavailable");
+    }
+
+    const body = await response.json();
+    history = body.history || [];
+  } catch {
+    history = [];
+  }
+
+  renderRecentQueries();
+  renderHistory();
+}
+
+function setActiveView(view) {
+  const showHistory = view === "history";
+  searchView.hidden = showHistory;
+  historyView.hidden = !showHistory;
+  searchTab.setAttribute("aria-selected", String(!showHistory));
+  historyTab.setAttribute("aria-selected", String(showHistory));
+}
+
+function renderRecentQueries() {
+  const seen = new Set();
+  const options = history.flatMap((entry) => {
+    if (seen.has(entry.query)) {
+      return [];
+    }
+
+    seen.add(entry.query);
+    const option = document.createElement("option");
+    option.value = entry.query;
+    option.label = entry.setNumber;
+    return [option];
+  });
+  recentQueriesNode.replaceChildren(...options);
+}
+
+function renderHistory() {
+  if (!history.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty";
+    empty.textContent = "\u5c1a\u7121\u67e5\u8a62\u7d00\u9304\u3002";
+    historyResultsNode.replaceChildren(empty);
+    return;
+  }
+
+  historyResultsNode.replaceChildren(...history.map(renderHistoryGroup));
+}
+
+function renderHistoryGroup(entry) {
+  const group = document.createElement("section");
+  group.className = "history-group";
+  const toggle = document.createElement("button");
+  toggle.className = "history-toggle";
+  toggle.type = "button";
+  toggle.setAttribute("aria-expanded", "false");
+  const setNumber = document.createElement("strong");
+  setNumber.textContent = entry.setNumber;
+  const query = document.createElement("span");
+  query.textContent = entry.query;
+  const count = document.createElement("span");
+  count.textContent = `${entry.dates.length} \u5929`;
+  toggle.append(setNumber, query, count);
+
+  const dates = document.createElement("div");
+  dates.className = "history-dates";
+  dates.hidden = true;
+  dates.replaceChildren(...entry.dates.map(renderHistoryDate));
+  toggle.addEventListener("click", () => {
+    const expanded = dates.hidden;
+    dates.hidden = !expanded;
+    toggle.setAttribute("aria-expanded", String(expanded));
+  });
+  group.append(toggle, dates);
+  return group;
+}
+
+function renderHistoryDate(entry) {
+  const row = document.createElement("section");
+  row.className = "history-date";
+  const date = document.createElement("time");
+  date.dateTime = entry.searchedAt;
+  date.textContent = formatHistoryDate(entry.date);
+  const platforms = document.createElement("div");
+  platforms.className = "history-platforms";
+  platforms.replaceChildren(...entry.platforms.map((platform) => {
+    const summary = document.createElement("p");
+    summary.textContent = `${platform.platformName}  ${money.format(platform.lowestPrice)} - ${money.format(platform.highestPrice)}`;
+    return summary;
+  }));
+  row.append(date, platforms);
+  return row;
+}
+
+function formatHistoryDate(value) {
+  return new Intl.DateTimeFormat("zh-TW", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(new Date(`${value}T00:00:00+08:00`));
 }
 
 async function openIopenVerification() {

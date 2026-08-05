@@ -8,11 +8,13 @@ import { createIopenVerificationLauncher } from "../infrastructure/iopen-verifie
 import { createMarketplaceClients } from "../infrastructure/marketplace-clients.mjs";
 import { createOfficialLegoPriceBrowserFetcher } from "../infrastructure/official-lego-price-browser.mjs";
 import { createOfficialLegoSetResolver } from "../infrastructure/official-lego-set-resolver.mjs";
+import { createPriceHistoryRepository } from "../infrastructure/price-history-repository.mjs";
 import { createTaiwanBankExchangeRateResolver } from "../infrastructure/taiwan-bank-exchange-rate.mjs";
 import { createRequestHandler } from "./app.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const publicDir = join(__dirname, "..", "..", "public");
+const dataDir = join(__dirname, "..", "..", "data");
 
 export async function startLegoSearchServer({ port = 5178, host = "127.0.0.1" } = {}) {
   const server = createLegoSearchServer();
@@ -47,6 +49,9 @@ export function createLegoSearchServer() {
   return createServer(createRequestHandler({
     aggregator,
     publicDir,
+    historyRepository: createPriceHistoryRepository({
+      filePath: join(dataDir, "price-history.json")
+    }),
     iopenVerifier: createIopenVerificationLauncher()
   }));
 }

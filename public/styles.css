@@ -45,6 +45,35 @@ select {
   box-shadow: 0 18px 40px rgba(23, 25, 31, 0.08);
 }
 
+.view-tabs {
+  display: flex;
+  gap: 18px;
+  margin-top: 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.view-tab {
+  min-height: 42px;
+  padding: 0 3px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  color: var(--muted);
+  background: transparent;
+  font-weight: 800;
+}
+
+.view-tab:hover {
+  color: var(--ink);
+  background: transparent;
+  filter: none;
+}
+
+.view-tab[aria-selected="true"] {
+  border-color: var(--red);
+  color: var(--ink);
+}
+
 .kicker {
   margin: 0 0 8px;
   color: var(--red);
@@ -289,6 +318,96 @@ button:hover {
   gap: 24px;
 }
 
+.history-view {
+  display: grid;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.history-view h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.history-results {
+  display: grid;
+  border-top: 2px solid var(--ink);
+}
+
+.history-group {
+  border-bottom: 1px solid var(--line);
+}
+
+.history-toggle {
+  display: grid;
+  grid-template-columns: 100px minmax(0, 1fr) auto;
+  align-items: center;
+  width: 100%;
+  min-height: 58px;
+  gap: 12px;
+  padding: 10px 0;
+  border: 0;
+  border-radius: 0;
+  color: var(--ink);
+  background: transparent;
+  text-align: left;
+}
+
+.history-toggle:hover {
+  background: transparent;
+  filter: none;
+}
+
+.history-toggle strong {
+  color: var(--red);
+  font-size: 1.05rem;
+}
+
+.history-toggle span {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-toggle span:last-child {
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.history-dates {
+  border-top: 1px solid var(--line);
+}
+
+.history-date {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.history-date:last-child {
+  border-bottom: 0;
+}
+
+.history-date time {
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.history-platforms {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 6px 14px;
+}
+
+.history-platforms p {
+  margin: 0;
+  color: var(--muted);
+}
+
 .platform-group {
   display: grid;
   gap: 10px;
@@ -497,6 +616,15 @@ a {
 
   .platform-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .history-toggle {
+    grid-template-columns: 86px minmax(0, 1fr) auto;
+  }
+
+  .history-date {
+    grid-template-columns: 1fr;
+    gap: 6px;
   }
 
   .result-controls {
