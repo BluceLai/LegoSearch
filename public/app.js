@@ -174,7 +174,7 @@ function renderRecentQueries() {
   const options = history.slice(0, 20).map((entry) => {
     const option = document.createElement("option");
     option.value = entry.query;
-    option.textContent = `${entry.setNumber}  ${entry.query}`;
+    option.textContent = entry.setNumber;
     return option;
   });
   const placeholder = document.createElement("option");
