@@ -1,3 +1,5 @@
+import { organizeResults } from "./result-organization.mjs";
+
 const form = document.querySelector("#search-form");
 const queryInput = document.querySelector("#query");
 const platformsNode = document.querySelector("#platforms");
@@ -7,9 +9,12 @@ const openInstructions = document.querySelector("#open-instructions");
 const summaryTitle = document.querySelector("#summary-title");
 const summaryDetail = document.querySelector("#summary-detail");
 const sortSelect = document.querySelector("#sort");
+const showThumbnails = document.querySelector("#show-thumbnails");
 const template = document.querySelector("#result-card-template");
+const platformGroupTemplate = document.querySelector("#platform-group-template");
 
 let results = [];
+let selectedPlatformIds = [];
 
 const money = new Intl.NumberFormat("zh-TW", {
   style: "currency",
@@ -23,6 +28,7 @@ form.addEventListener("submit", async (event) => {
 });
 
 sortSelect.addEventListener("change", renderResults);
+showThumbnails.addEventListener("change", renderResults);
 
 await boot();
 
@@ -88,6 +94,7 @@ async function search() {
     }
 
     results = body.results || [];
+    selectedPlatformIds = body.platformIds || [];
     const priced = results.filter((item) => item.price !== null).length;
     summaryTitle.textContent = `${results.length} \u7b46\u7d50\u679c`;
     summaryDetail.textContent = `${priced} \u7b46\u542b\u89e3\u6790\u50f9\u683c\u3002\u5e73\u53f0\u64cb\u4e0b\u81ea\u52d5\u64f7\u53d6\u6642\u6703\u4fdd\u7559\u641c\u5c0b\u9023\u7d50\u3002`;
@@ -108,6 +115,7 @@ async function search() {
 
 function showStartupError(message) {
   results = [];
+  selectedPlatformIds = [];
   summaryTitle.textContent = "\u7121\u6cd5\u958b\u59cb\u641c\u5c0b";
   summaryDetail.textContent = message;
   openInstructions.hidden = false;
@@ -117,24 +125,27 @@ function showStartupError(message) {
 }
 
 function renderResults() {
-  const sorted = [...results].sort((a, b) => {
-    if (sortSelect.value === "platform") {
-      return a.platformName.localeCompare(b.platformName, "zh-Hant");
-    }
-
-    if (a.price === null && b.price === null) return 0;
-    if (a.price === null) return 1;
-    if (b.price === null) return -1;
-
-    return sortSelect.value === "price-desc" ? b.price - a.price : a.price - b.price;
+  const groups = organizeResults({
+    results,
+    platformIds: selectedPlatformIds,
+    sort: sortSelect.value
   });
+  resultsNode.classList.toggle("list-mode", !showThumbnails.checked);
 
-  if (!sorted.length) {
+  if (!groups.length) {
     renderEmpty("\u6c92\u6709\u53ef\u986f\u793a\u7684\u7d50\u679c\u3002");
     return;
   }
 
-  resultsNode.replaceChildren(...sorted.map(renderCard));
+  resultsNode.replaceChildren(...groups.map(renderPlatformGroup));
+}
+
+function renderPlatformGroup(group) {
+  const node = platformGroupTemplate.content.cloneNode(true);
+  node.querySelector("h2").textContent = group.platformName;
+  node.querySelector(".platform-count").textContent = `${group.results.length} \u7b46`;
+  node.querySelector(".platform-results").replaceChildren(...group.results.map(renderCard));
+  return node;
 }
 
 function renderCard(item) {
@@ -143,7 +154,7 @@ function renderCard(item) {
   const imageFallback = node.querySelector(".media span");
   const platform = node.querySelector(".platform");
   const source = node.querySelector(".source");
-  const title = node.querySelector("h2");
+  const title = node.querySelector("h3");
   const notice = node.querySelector(".notice");
   const price = node.querySelector(".price");
   const time = node.querySelector("time");
@@ -157,7 +168,9 @@ function renderCard(item) {
   }
 
   platform.textContent = item.platformName;
-  source.textContent = item.source === "marketplace" ? "\u5df2\u89e3\u6790" : "\u641c\u5c0b\u9023\u7d50";
+  source.textContent = item.source === "search-link"
+    ? "\u641c\u5c0b\u9023\u7d50"
+    : item.source === "browser" ? "\u700f\u89bd\u5668\u64f7\u53d6" : "\u5df2\u89e3\u6790";
   title.textContent = item.title;
   notice.textContent = item.notice || "";
   price.textContent = item.price === null ? "\u958b\u555f\u5e73\u53f0\u78ba\u8a8d" : money.format(item.price);

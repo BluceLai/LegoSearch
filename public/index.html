@@ -31,14 +31,20 @@
           <strong id="summary-title">&#x5c31;&#x7dd2;</strong>
           <span id="summary-detail">&#x9078;&#x64c7;&#x5e73;&#x53f0;&#xff0c;&#x8f38;&#x5165;&#x6a02;&#x9ad8;&#x95dc;&#x9375;&#x5b57;&#x958b;&#x59cb;&#x6bd4;&#x50f9;&#x3002;</span>
         </div>
-        <label class="field compact">
-          <span>&#x6392;&#x5e8f;</span>
-          <select id="sort">
-            <option value="price-asc">&#x50f9;&#x683c;&#x4f4e;&#x5230;&#x9ad8;</option>
-            <option value="price-desc">&#x50f9;&#x683c;&#x9ad8;&#x5230;&#x4f4e;</option>
-            <option value="platform">&#x5e73;&#x53f0;</option>
-          </select>
-        </label>
+        <div class="result-controls">
+          <label class="field compact">
+            <span>&#x6392;&#x5e8f;</span>
+            <select id="sort">
+              <option value="price-asc">&#x50f9;&#x683c;&#x4f4e;&#x5230;&#x9ad8;</option>
+              <option value="price-desc">&#x50f9;&#x683c;&#x9ad8;&#x5230;&#x4f4e;</option>
+              <option value="platform">&#x5e73;&#x53f0;</option>
+            </select>
+          </label>
+          <label class="thumbnail-toggle">
+            <input id="show-thumbnails" type="checkbox" checked />
+            <span>&#x986f;&#x793a;&#x7e2e;&#x5716;</span>
+          </label>
+        </div>
       </section>
 
       <section id="alerts" class="alerts" hidden></section>
@@ -57,7 +63,7 @@
             <span class="platform"></span>
             <span class="source"></span>
           </div>
-          <h2></h2>
+          <h3></h3>
           <p class="notice"></p>
           <strong class="price"></strong>
           <div class="footer">
@@ -66,6 +72,16 @@
           </div>
         </div>
       </article>
+    </template>
+
+    <template id="platform-group-template">
+      <section class="platform-group">
+        <header class="platform-heading">
+          <h2></h2>
+          <span class="platform-count"></span>
+        </header>
+        <div class="platform-results"></div>
+      </section>
     </template>
 
     <script type="module" src="./app.js"></script>

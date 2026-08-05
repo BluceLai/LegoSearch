@@ -151,8 +151,31 @@ button:hover {
   color: var(--muted);
 }
 
+.result-controls {
+  display: flex;
+  align-items: end;
+  gap: 12px;
+}
+
 .compact {
-  min-width: 220px;
+  min-width: 180px;
+}
+
+.thumbnail-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  color: var(--ink);
+  font-size: 0.9rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.thumbnail-toggle input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--red);
 }
 
 .alerts {
@@ -174,6 +197,36 @@ button:hover {
 }
 
 .results {
+  display: grid;
+  gap: 24px;
+}
+
+.platform-group {
+  display: grid;
+  gap: 10px;
+}
+
+.platform-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 9px;
+  border-bottom: 2px solid var(--ink);
+}
+
+.platform-heading h2 {
+  min-height: 0;
+  font-size: 1.2rem;
+}
+
+.platform-count {
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.platform-results {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 14px;
@@ -242,7 +295,7 @@ button:hover {
   background: rgba(30, 125, 91, 0.12);
 }
 
-h2 {
+h3 {
   margin: 0;
   min-height: 3.9em;
   font-size: 1rem;
@@ -284,6 +337,43 @@ a {
   text-align: center;
 }
 
+.results.list-mode .platform-results {
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.results.list-mode .result-card {
+  grid-template-columns: 1fr;
+  grid-template-rows: auto;
+  min-height: 0;
+}
+
+.results.list-mode .media {
+  display: none;
+}
+
+.results.list-mode .content {
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto auto;
+  align-items: center;
+}
+
+.results.list-mode .meta,
+.results.list-mode .footer {
+  grid-column: 1 / -1;
+}
+
+.results.list-mode .content h3,
+.results.list-mode .notice {
+  min-height: 0;
+  grid-column: 1;
+}
+
+.results.list-mode .price {
+  grid-column: 2;
+  grid-row: 2;
+}
+
 @media (max-width: 760px) {
   .workspace {
     width: min(100% - 20px, 1160px);
@@ -299,5 +389,14 @@ a {
 
   .platform-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .result-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .compact {
+    min-width: 0;
   }
 }

@@ -31,7 +31,11 @@ function createBrowserClient(platformId, createContext, schedule) {
           waitUntil: "domcontentloaded",
           timeout: 45_000
         });
-        await page.waitForSelector(productLinkSelector(platformId), { timeout: 30_000 });
+        try {
+          await page.waitForSelector(productLinkSelector(platformId), { timeout: 30_000 });
+        } catch {
+          throw new Error(`${platform.name}\u7121\u6cd5\u53d6\u5f97\u53ef\u89e3\u6790\u5546\u54c1\u3002`);
+        }
         const products = await page.evaluate(extractVisibleProducts, { platformId });
 
         return products.map((product) => createMarketplaceResult({
@@ -70,6 +74,7 @@ async function createEdgeContext() {
   return chromium.launchPersistentContext(browserProfileDir, {
     executablePath,
     headless: false,
+    args: ["--start-minimized", "--window-position=-32000,-32000"],
     viewport: { width: 1440, height: 1000 }
   });
 }

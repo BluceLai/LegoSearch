@@ -152,3 +152,28 @@ test("serializes browser searches that share the Edge profile", async () => {
 
   assert.equal(highestActiveContexts, 1);
 });
+
+test("reports a concise platform message when visible browser products are unavailable", async () => {
+  const clients = createBrowserMarketplaceClients({
+    createContext: async () => ({
+      async newPage() {
+        return {
+          async goto() {},
+          async waitForSelector() {
+            throw new Error("page.waitForSelector internal detail");
+          }
+        };
+      },
+      async close() {}
+    })
+  });
+
+  await assert.rejects(
+    clients.shopee({
+      query: "LEGO 60500",
+      platform: getPlatform("shopee"),
+      searchedAt: "2026-08-05T00:00:00.000Z"
+    }),
+    /\u8766\u76ae\u7121\u6cd5\u53d6\u5f97\u53ef\u89e3\u6790\u5546\u54c1/
+  );
+});

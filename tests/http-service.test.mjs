@@ -55,6 +55,21 @@ test("GET /api/search delegates to the aggregator and returns JSON", async () =>
   }
 });
 
+test("serves browser modules with a JavaScript content type", async () => {
+  const { baseUrl, close } = await startTestServer({
+    publicDir: new URL("../public/", import.meta.url)
+  });
+
+  try {
+    const response = await fetch(`${baseUrl}/result-organization.mjs`);
+
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get("content-type"), /^text\/javascript/);
+  } finally {
+    await close();
+  }
+});
+
 async function startTestServer(options = {}) {
   const server = createServer(createRequestHandler({
     aggregator: options.aggregator || {
@@ -62,7 +77,7 @@ async function startTestServer(options = {}) {
         return { query: "", platformIds: [], searchedAt: "", results: [], errors: [] };
       }
     },
-    publicDir: new URL(".", import.meta.url)
+    publicDir: options.publicDir || new URL(".", import.meta.url)
   }));
 
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
