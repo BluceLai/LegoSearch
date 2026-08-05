@@ -19,9 +19,15 @@ export function parseSearchQuery({ text, platforms }) {
 }
 
 function normalizeText(value) {
-  return String(value || "")
+  const normalized = String(value || "")
     .trim()
     .replace(/\s+/g, " ");
+
+  if (!normalized || /(?:^|\s)(?:lego|\u6a02\u9ad8)(?:\s|$)/i.test(normalized)) {
+    return normalized;
+  }
+
+  return `LEGO ${normalized}`;
 }
 
 function parsePlatformIds(value) {

@@ -37,3 +37,13 @@ test("rejects blank queries and empty platform selections", () => {
     /At least one supported platform is required/
   );
 });
+
+test("adds LEGO to a set number entered without a brand", () => {
+  assert.deepEqual(
+    parseSearchQuery({ text: "10305", platforms: "pchome" }),
+    {
+      text: "LEGO 10305",
+      platformIds: ["pchome"]
+    }
+  );
+});
