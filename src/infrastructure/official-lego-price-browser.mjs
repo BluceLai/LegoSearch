@@ -23,7 +23,6 @@ export function createOfficialLegoPriceBrowserFetcher({
           }
           const text = await page.evaluate(() => (
             document.querySelector('[data-test="product-price-display-price"]')?.textContent?.trim()
-            || document.body?.innerText
             || ""
           ));
           await page.close?.();
