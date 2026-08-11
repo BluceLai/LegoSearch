@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { createSearchAggregator } from "../domain/search-aggregator.mjs";
 import { createBrowserMarketplaceClients } from "../infrastructure/browser-marketplace-clients.mjs";
 import { createBrickEconomyRetailPriceResolver } from "../infrastructure/brickeconomy-retail-price.mjs";
+import { createCoupangDamagedBoxSearcher } from "../infrastructure/coupang-damaged-box-search.mjs";
 import { createIopenVerificationLauncher } from "../infrastructure/iopen-verifier.mjs";
 import { createMarketplaceClients } from "../infrastructure/marketplace-clients.mjs";
 import { createOfficialLegoPriceBrowserFetcher } from "../infrastructure/official-lego-price-browser.mjs";
@@ -65,6 +66,7 @@ export function createLegoSearchServer() {
     historyRepository: createPriceHistoryRepository({
       filePath: join(resolveDataDir(), "price-history.json")
     }),
+    coupangDamagedBoxSearcher: createCoupangDamagedBoxSearcher(),
     iopenVerifier: createIopenVerificationLauncher()
   }));
 }

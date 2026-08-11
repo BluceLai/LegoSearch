@@ -31,7 +31,10 @@ export function scheduleMarketplaceBrowserWork(profileName, work) {
   return scheduled;
 }
 
-export async function createMarketplaceEdgeContext({ profileName = defaultProfileName } = {}) {
+export async function createMarketplaceEdgeContext({
+  profileName = defaultProfileName,
+  headless = false
+} = {}) {
   const browserProfileDir = await ensureMarketplaceBrowserProfile(profileName);
   const { chromium } = await import("playwright-core");
   const executablePath = findMarketplaceEdgeExecutable();
@@ -42,8 +45,8 @@ export async function createMarketplaceEdgeContext({ profileName = defaultProfil
 
   return chromium.launchPersistentContext(browserProfileDir, {
     executablePath,
-    headless: false,
-    args: ["--start-minimized", "--window-position=-32000,-32000"],
+    headless,
+    args: headless ? [] : ["--start-minimized", "--window-position=-32000,-32000"],
     viewport: { width: 1440, height: 1000 }
   });
 }

@@ -36,6 +36,7 @@
 
       <nav class="view-tabs" role="tablist" aria-label="&#x6aa2;&#x8996;">
         <button id="search-tab" class="view-tab" type="button" role="tab" aria-selected="true" aria-controls="search-view">&#x50f9;&#x683c;&#x641c;&#x5c0b;</button>
+        <button id="coupang-damaged-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="coupang-damaged-view">&#x9177;&#x6f8e;&#x76d2;&#x640d;</button>
         <button id="history-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="history-view">&#x67e5;&#x8a62;&#x7d00;&#x9304;</button>
       </nav>
 
@@ -86,6 +87,25 @@
       <section id="history-view" class="history-view" role="tabpanel" aria-labelledby="history-tab" hidden>
         <h2>&#x67e5;&#x8a62;&#x7d00;&#x9304;</h2>
         <section id="history-results" class="history-results"></section>
+      </section>
+
+      <section id="coupang-damaged-view" class="coupang-damaged-view" role="tabpanel" aria-labelledby="coupang-damaged-tab" hidden>
+        <header class="coupang-damaged-heading">
+          <h2>&#x9177;&#x6f8e;&#x76d2;&#x640d;</h2>
+        </header>
+        <form id="coupang-damaged-form" class="coupang-damaged-form">
+          <label class="field">
+            <span>&#x95dc;&#x9375;&#x5b57;&#x6216;&#x578b;&#x865f;</span>
+            <input id="coupang-damaged-query" type="search" value="LEGO" autocomplete="off" />
+          </label>
+          <label class="thumbnail-toggle">
+            <input id="show-coupang-damaged-thumbnails" type="checkbox" />
+            <span>&#x986f;&#x793a;&#x7e2e;&#x5716;</span>
+          </label>
+          <button id="coupang-damaged-search-button" type="submit">&#x641c;&#x5c0b;&#x9177;&#x6f8e;&#x76d2;&#x640d;</button>
+        </form>
+        <p id="coupang-damaged-status" class="coupang-damaged-status" aria-live="polite"></p>
+        <section id="coupang-damaged-results" class="coupang-damaged-results"></section>
       </section>
     </main>
 

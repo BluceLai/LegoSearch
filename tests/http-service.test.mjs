@@ -55,6 +55,45 @@ test("GET /api/search delegates to the aggregator and returns JSON", async () =>
   }
 });
 
+test("GET /api/coupang/damaged-box returns the current damaged-box offers", async () => {
+  const calls = [];
+  const { baseUrl, close } = await startTestServer({
+    coupangDamagedBoxSearcher: async (input) => {
+      calls.push(input);
+      return [{
+        title: "LEGO 43015",
+        normalPrice: 1959,
+        damagedPrice: 1852,
+        damagedQuantity: 2,
+        listPrice: 2799,
+        url: "https://www.tw.coupang.com/products/43015",
+        imageUrl: null
+      }];
+    }
+  });
+
+  try {
+    const response = await fetch(baseUrl + "/api/coupang/damaged-box?q=43015&images=1");
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(calls, [{ query: "43015", includeImages: true }]);
+    assert.deepEqual(await response.json(), {
+      query: "43015",
+      results: [{
+        title: "LEGO 43015",
+        normalPrice: 1959,
+        damagedPrice: 1852,
+        damagedQuantity: 2,
+        listPrice: 2799,
+        url: "https://www.tw.coupang.com/products/43015",
+        imageUrl: null
+      }]
+    });
+  } finally {
+    await close();
+  }
+});
+
 test("records a completed search and returns grouped daily price history", async () => {
   const recorded = [];
   const history = [{
@@ -146,6 +185,7 @@ async function startTestServer(options = {}) {
     },
     publicDir: options.publicDir || new URL(".", import.meta.url),
     iopenVerifier: options.iopenVerifier,
+    coupangDamagedBoxSearcher: options.coupangDamagedBoxSearcher,
     historyRepository: options.historyRepository
   }));
 

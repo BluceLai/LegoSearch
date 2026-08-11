@@ -3,6 +3,7 @@ import {
   createMarketplaceEdgeContext,
   scheduleMarketplaceBrowserWork
 } from "./marketplace-edge.mjs";
+import { absoluteMarketplaceUrl } from "./marketplace-url.mjs";
 
 export function createBrowserMarketplaceClients({
   createContext = createMarketplaceEdgeContext,
@@ -44,7 +45,7 @@ function createBrowserClient(platformId, createContext, schedule) {
         return products.map((product) => createMarketplaceResult({
           platform,
           ...product,
-          url: absoluteUrl(product.url, platform.homepage),
+          url: absoluteMarketplaceUrl(product.url, platform.homepage),
           source: "browser",
           fetchedAt: searchedAt
         })).filter((product) => product.title && product.price !== null);
@@ -138,12 +139,4 @@ function extractVisibleProducts({ platformId }) {
       imageUrl: image?.currentSrc || image?.src || null
     };
   }).filter(Boolean);
-}
-
-function absoluteUrl(value, baseUrl) {
-  try {
-    return new URL(value, baseUrl).toString();
-  } catch {
-    return baseUrl;
-  }
 }

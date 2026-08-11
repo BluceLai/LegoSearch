@@ -6,9 +6,17 @@ const recentSearchesSelect = document.querySelector("#recent-searches");
 const platformsNode = document.querySelector("#platforms");
 const searchView = document.querySelector("#search-view");
 const historyView = document.querySelector("#history-view");
+const coupangDamagedView = document.querySelector("#coupang-damaged-view");
 const searchTab = document.querySelector("#search-tab");
 const historyTab = document.querySelector("#history-tab");
+const coupangDamagedTab = document.querySelector("#coupang-damaged-tab");
 const historyResultsNode = document.querySelector("#history-results");
+const coupangDamagedForm = document.querySelector("#coupang-damaged-form");
+const coupangDamagedQuery = document.querySelector("#coupang-damaged-query");
+const coupangDamagedResultsNode = document.querySelector("#coupang-damaged-results");
+const coupangDamagedStatus = document.querySelector("#coupang-damaged-status");
+const coupangDamagedSearchButton = document.querySelector("#coupang-damaged-search-button");
+const showCoupangDamagedThumbnails = document.querySelector("#show-coupang-damaged-thumbnails");
 const resultsNode = document.querySelector("#results");
 const lowestResultsNode = document.querySelector("#lowest-results");
 const officialPricesNode = document.querySelector("#official-prices");
@@ -29,6 +37,7 @@ let expandedPlatformIds = new Set();
 let officialPrices = [];
 let officialReferenceTwd = null;
 let history = [];
+let coupangDamagedResults = [];
 
 const money = new Intl.NumberFormat("zh-TW", {
   style: "currency",
@@ -52,6 +61,18 @@ recentSearchesSelect.addEventListener("change", async () => {
 });
 searchTab.addEventListener("click", () => setActiveView("search"));
 historyTab.addEventListener("click", () => setActiveView("history"));
+coupangDamagedTab.addEventListener("click", () => setActiveView("coupang-damaged"));
+coupangDamagedForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  await searchCoupangDamagedBox();
+});
+showCoupangDamagedThumbnails.addEventListener("change", async () => {
+  if (showCoupangDamagedThumbnails.checked && coupangDamagedResults.length) {
+    await searchCoupangDamagedBox();
+    return;
+  }
+  renderCoupangDamagedBoxResults();
+});
 
 await boot();
 
@@ -163,11 +184,104 @@ async function refreshHistory() {
 }
 
 function setActiveView(view) {
-  const showHistory = view === "history";
-  searchView.hidden = showHistory;
-  historyView.hidden = !showHistory;
-  searchTab.setAttribute("aria-selected", String(!showHistory));
-  historyTab.setAttribute("aria-selected", String(showHistory));
+  searchView.hidden = view !== "search";
+  historyView.hidden = view !== "history";
+  coupangDamagedView.hidden = view !== "coupang-damaged";
+  searchTab.setAttribute("aria-selected", String(view === "search"));
+  historyTab.setAttribute("aria-selected", String(view === "history"));
+  coupangDamagedTab.setAttribute("aria-selected", String(view === "coupang-damaged"));
+}
+
+async function searchCoupangDamagedBox() {
+  coupangDamagedSearchButton.disabled = true;
+  coupangDamagedStatus.textContent = "\u641c\u5c0b\u4e2d...";
+  coupangDamagedResultsNode.replaceChildren();
+
+  try {
+    const params = new URLSearchParams({
+      q: coupangDamagedQuery.value,
+      images: showCoupangDamagedThumbnails.checked ? "1" : "0"
+    });
+    const response = await fetch("/api/coupang/damaged-box?" + params);
+    const body = await response.json();
+
+    if (!response.ok) {
+      throw new Error(body.error || "\u9177\u6f8e\u76d2\u640d\u641c\u5c0b\u5931\u6557\u3002");
+    }
+
+    coupangDamagedResults = body.results || [];
+    coupangDamagedStatus.textContent = String(coupangDamagedResults.length) + " \u7b46\u76d2\u640d\u5546\u54c1";
+    renderCoupangDamagedBoxResults();
+  } catch (error) {
+    coupangDamagedResults = [];
+    coupangDamagedStatus.textContent = error.message;
+    renderCoupangDamagedBoxResults();
+  } finally {
+    coupangDamagedSearchButton.disabled = false;
+  }
+}
+
+function renderCoupangDamagedBoxResults() {
+  coupangDamagedResultsNode.classList.toggle("with-thumbnails", showCoupangDamagedThumbnails.checked);
+
+  if (!coupangDamagedResults.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty";
+    empty.textContent = "\u5c1a\u7121\u53ef\u986f\u793a\u5546\u54c1\u3002";
+    coupangDamagedResultsNode.replaceChildren(empty);
+    return;
+  }
+
+  coupangDamagedResultsNode.replaceChildren(...coupangDamagedResults.map(renderCoupangDamagedBoxResult));
+}
+
+function renderCoupangDamagedBoxResult(item) {
+  const node = document.createElement("article");
+  node.className = "coupang-damaged-result";
+  const details = document.createElement("div");
+  details.className = "coupang-damaged-details";
+  const title = document.createElement("h3");
+  title.textContent = item.title;
+  const prices = document.createElement("dl");
+  prices.className = "coupang-damaged-prices";
+  prices.replaceChildren(
+    renderCoupangDamagedPrice("\u7121\u76d2\u640d", item.normalPrice),
+    renderCoupangDamagedPrice("\u76d2\u640d", item.damagedPrice, true),
+    renderCoupangDamagedPrice("\u76d2\u640d\u5eab\u5b58", item.damagedQuantity, false, "\u4ef6"),
+    renderCoupangDamagedPrice("\u5b9a\u50f9", item.listPrice)
+  );
+  const link = document.createElement("a");
+  link.href = item.url;
+  link.target = "_blank";
+  link.rel = "noreferrer";
+  link.textContent = "\u67e5\u770b";
+  details.append(title, prices, link);
+
+  if (showCoupangDamagedThumbnails.checked && item.imageUrl) {
+    const image = document.createElement("img");
+    image.src = item.imageUrl;
+    image.alt = "";
+    image.loading = "lazy";
+    node.append(image);
+  }
+
+  node.append(details);
+  return node;
+}
+
+function renderCoupangDamagedPrice(label, value, emphasize = false, suffix = "") {
+  const fragment = document.createDocumentFragment();
+  const term = document.createElement("dt");
+  term.textContent = label;
+  const detail = document.createElement("dd");
+  detail.textContent = value === null || value === undefined
+    ? "--"
+    : suffix ? String(value) + suffix : money.format(value);
+  if (emphasize) {
+    detail.className = "damaged-price";
+  }
+  fragment.append(term, detail);
+  return fragment;
 }
 
 function renderRecentQueries() {

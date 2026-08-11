@@ -8,6 +8,7 @@ import "./price-history-repository.test.mjs";
 import "./taiwan-bank-exchange-rate.test.mjs";
 import "./official-lego-price-browser.test.mjs";
 import "./browser-marketplace-clients.test.mjs";
+import "./coupang-damaged-box-search.test.mjs";
 import "./desktop-packaging.test.mjs";
 import "./desktop-data-directory.test.mjs";
 import "./iopen-verifier.test.mjs";

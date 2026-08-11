@@ -12,7 +12,13 @@ const contentTypes = {
   ".json": "application/json; charset=utf-8"
 };
 
-export function createRequestHandler({ aggregator, publicDir, iopenVerifier, historyRepository = null }) {
+export function createRequestHandler({
+  aggregator,
+  publicDir,
+  iopenVerifier,
+  coupangDamagedBoxSearcher,
+  historyRepository = null
+}) {
   return async function requestHandler(request, response) {
     const url = new URL(request.url || "/", `http://${request.headers.host || "localhost"}`);
 
@@ -38,6 +44,18 @@ export function createRequestHandler({ aggregator, publicDir, iopenVerifier, his
         sendJson(response, 200, {
           history: historyRepository ? await historyRepository.list() : []
         });
+        return;
+      }
+
+      if (url.pathname === "/api/coupang/damaged-box") {
+        if (!coupangDamagedBoxSearcher) {
+          throw new Error("酷澎盒損搜尋服務尚未設定。");
+        }
+
+        const query = url.searchParams.get("q") || "";
+        const includeImages = url.searchParams.get("images") === "1";
+        const results = await coupangDamagedBoxSearcher({ query, includeImages });
+        sendJson(response, 200, { query, results });
         return;
       }
 
