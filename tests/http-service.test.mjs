@@ -73,12 +73,12 @@ test("GET /api/coupang/damaged-box returns the current damaged-box offers", asyn
   });
 
   try {
-    const response = await fetch(baseUrl + "/api/coupang/damaged-box?q=43015&images=1");
+    const response = await fetch(baseUrl + "/api/coupang/damaged-box?images=1");
 
     assert.equal(response.status, 200);
-    assert.deepEqual(calls, [{ query: "43015", includeImages: true }]);
+    assert.deepEqual(calls, [{ query: "LEGO", includeImages: true }]);
     assert.deepEqual(await response.json(), {
-      query: "43015",
+      query: "LEGO",
       results: [{
         title: "LEGO 43015",
         normalPrice: 1959,

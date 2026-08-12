@@ -6,7 +6,7 @@ import {
 import { absoluteMarketplaceUrl } from "./marketplace-url.mjs";
 
 const coupangProfileName = "coupang-damaged-box-browser-profile-v2";
-const candidateLimit = 60;
+const candidateLimit = 72;
 
 export function createCoupangDamagedBoxSearcher({
   createContext = createMarketplaceEdgeContext,
@@ -23,7 +23,7 @@ export function createCoupangDamagedBoxSearcher({
         const platform = getPlatform("coupang");
         const candidates = (await findCandidates({
           context,
-          searchUrl: platform.buildSearchUrl(createDamagedBoxQuery(query)),
+          searchUrl: createCandidateSearchUrl(platform, query),
           includeImages
         })).map((candidate) => ({
           ...candidate,
@@ -166,7 +166,7 @@ async function waitForOfferRows(page) {
     await page.waitForFunction(
       () => {
         const text = document.body?.innerText || "";
-        return text.includes("盒損福利品") && text.includes("當前商品");
+        return text.includes("盒損福利品");
       },
       undefined,
       { timeout: 10_000 }
@@ -186,6 +186,12 @@ function createDamagedBoxQuery(value) {
   }
 
   return terms.join(" ");
+}
+
+function createCandidateSearchUrl(platform, query) {
+  const url = new URL(platform.buildSearchUrl(createDamagedBoxQuery(query)));
+  url.searchParams.set("itemsCount", String(candidateLimit));
+  return url.toString();
 }
 
 function createOfferListUrl(candidateUrl) {
@@ -252,12 +258,12 @@ function extractDamagedOfferPrices() {
   const damagedRow = damagedRows.at(-1);
   const normalRow = normalRows.at(-1);
 
-  if (!damagedRow || !normalRow) {
+  if (!damagedRow) {
     return null;
   }
 
   return {
-    normalPrice: toPrice(normalRow[3]),
+    normalPrice: normalRow ? toPrice(normalRow[3]) : null,
     damagedPrice: toPrice(damagedRow[2]),
     damagedQuantity: null,
     listPrice: toPrice(damagedRow[1])

@@ -52,7 +52,7 @@ export function createRequestHandler({
           throw new Error("酷澎盒損搜尋服務尚未設定。");
         }
 
-        const query = url.searchParams.get("q") || "";
+        const query = "LEGO";
         const includeImages = url.searchParams.get("images") === "1";
         const results = await coupangDamagedBoxSearcher({ query, includeImages });
         sendJson(response, 200, { query, results });

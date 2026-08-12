@@ -350,9 +350,9 @@ button:hover {
 }
 
 .coupang-damaged-form {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  align-items: end;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
   gap: 12px;
 }
 
@@ -727,7 +727,8 @@ a {
   }
 
   .coupang-damaged-form {
-    grid-template-columns: 1fr;
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .coupang-damaged-results.with-thumbnails .coupang-damaged-result {

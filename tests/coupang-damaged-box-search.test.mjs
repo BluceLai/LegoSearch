@@ -48,6 +48,23 @@ test("follows a product offer list and keeps only its damaged-box offer", async 
   }]);
 });
 
+test("requests the largest Coupang candidate page for the fixed LEGO scan", async () => {
+  const navigatedUrls = [];
+  const search = createCoupangDamagedBoxSearcher({
+    schedule: (work) => work(),
+    createContext: async () => ({
+      async newPage() {
+        return pageThatEvaluates([], navigatedUrls);
+      },
+      async close() {}
+    })
+  });
+
+  await search({ query: "LEGO" });
+
+  assert.match(navigatedUrls[0], /itemsCount=72/);
+});
+
 test("uses the normal offer row rather than reusing the damaged-box row", async () => {
   const pages = [
     pageThatEvaluates([{
@@ -75,6 +92,35 @@ test("uses the normal offer row rather than reusing the damaged-box row", async 
 
   assert.equal(result.damagedPrice, 1673);
   assert.equal(result.normalPrice, 1819);
+});
+
+test("keeps a damaged-box offer when the normal offer is unavailable", async () => {
+  const pages = [
+    pageThatEvaluates([{
+      title: "LEGO 43105",
+      url: "/products/43105",
+      imageUrl: null
+    }]),
+    pageThatEvaluates("/products/43105/item/43105/offerList?totalCount=1"),
+    pageThatEvaluatesDocumentText(
+      "47% $2,799 $1,673 $1,473 \u6298\u6263\u5f8c\u50f9\u683c \u514d\u904b \u76d2\u640d\u798f\u5229\u54c1 \u2013 \u5168\u65b0\u672a\u958b\u5c01"
+    )
+  ];
+  const search = createCoupangDamagedBoxSearcher({
+    schedule: (work) => work(),
+    createContext: async () => ({
+      async newPage() {
+        return pages.shift();
+      },
+      async close() {}
+    })
+  });
+
+  const [result] = await search({ query: "43105" });
+
+  assert.equal(result.normalPrice, null);
+  assert.equal(result.damagedPrice, 1673);
+  assert.equal(result.listPrice, 2799);
 });
 
 test("uses the candidate item link to open its offer list directly", async () => {
@@ -105,9 +151,11 @@ test("uses the candidate item link to open its offer list directly", async () =>
   assert.equal(result.damagedPrice, 1673);
 });
 
-function pageThatEvaluates(result) {
+function pageThatEvaluates(result, navigatedUrls = null) {
   return {
-    async goto() {},
+    async goto(url) {
+      navigatedUrls?.push(url);
+    },
     async route() {},
     async waitForSelector() {},
     async evaluate() {

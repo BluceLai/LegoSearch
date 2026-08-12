@@ -12,7 +12,6 @@ const historyTab = document.querySelector("#history-tab");
 const coupangDamagedTab = document.querySelector("#coupang-damaged-tab");
 const historyResultsNode = document.querySelector("#history-results");
 const coupangDamagedForm = document.querySelector("#coupang-damaged-form");
-const coupangDamagedQuery = document.querySelector("#coupang-damaged-query");
 const coupangDamagedResultsNode = document.querySelector("#coupang-damaged-results");
 const coupangDamagedStatus = document.querySelector("#coupang-damaged-status");
 const coupangDamagedSearchButton = document.querySelector("#coupang-damaged-search-button");
@@ -199,7 +198,6 @@ async function searchCoupangDamagedBox() {
 
   try {
     const params = new URLSearchParams({
-      q: coupangDamagedQuery.value,
       images: showCoupangDamagedThumbnails.checked ? "1" : "0"
     });
     const response = await fetch("/api/coupang/damaged-box?" + params);
