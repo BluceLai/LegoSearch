@@ -14,7 +14,6 @@ test("follows a product offer list and keeps only its damaged-box offer", async 
     pageThatWaitsForOfferRows({
       normalPrice: 1950,
       damagedPrice: 1852,
-      damagedQuantity: null,
       listPrice: 2799
     })
   ];
@@ -41,7 +40,6 @@ test("follows a product offer list and keeps only its damaged-box offer", async 
     title: "LEGO Lionel Messi 43015",
     normalPrice: 1950,
     damagedPrice: 1852,
-    damagedQuantity: null,
     listPrice: 2799,
     url: "https://www.tw.coupang.com/products/43015",
     imageUrl: null
@@ -78,7 +76,6 @@ test("waits for the Chinese damaged-box offer label before reading prices", asyn
     pageThatWaitsForChineseDamagedBoxOffer({
       normalPrice: null,
       damagedPrice: 1673,
-      damagedQuantity: null,
       listPrice: 2799
     })
   ];

@@ -27,6 +27,6 @@ test("web entrypoint keeps local assets relative and includes a startup notice",
   assert.match(html, /id="coupang-damaged-view"/);
   assert.match(html, /id="coupang-damaged-form"/);
   assert.doesNotMatch(html, /id="coupang-damaged-query"/);
-  assert.match(html, /id="show-coupang-damaged-thumbnails"/);
+  assert.doesNotMatch(html, /show-coupang-damaged-thumbnails/);
   assert.match(html, /id="coupang-damaged-results"/);
 });

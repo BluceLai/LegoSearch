@@ -55,8 +55,9 @@ test("GET /api/search delegates to the aggregator and returns JSON", async () =>
   }
 });
 
-test("GET /api/coupang/damaged-box returns the current damaged-box offers", async () => {
+test("GET /api/coupang/damaged-box stores the latest no-thumbnail offers", async () => {
   const calls = [];
+  const stored = [];
   const { baseUrl, close } = await startTestServer({
     coupangDamagedBoxSearcher: async (input) => {
       calls.push(input);
@@ -64,11 +65,18 @@ test("GET /api/coupang/damaged-box returns the current damaged-box offers", asyn
         title: "LEGO 43015",
         normalPrice: 1959,
         damagedPrice: 1852,
-        damagedQuantity: 2,
         listPrice: 2799,
         url: "https://www.tw.coupang.com/products/43015",
         imageUrl: null
       }];
+    },
+    coupangDamagedBoxSnapshotRepository: {
+      async save(snapshot) {
+        stored.push(snapshot);
+      },
+      async get() {
+        return null;
+      }
     }
   });
 
@@ -76,19 +84,54 @@ test("GET /api/coupang/damaged-box returns the current damaged-box offers", asyn
     const response = await fetch(baseUrl + "/api/coupang/damaged-box?images=1");
 
     assert.equal(response.status, 200);
-    assert.deepEqual(calls, [{ query: "LEGO", includeImages: true }]);
+    assert.deepEqual(calls, [{ query: "LEGO" }]);
     assert.deepEqual(await response.json(), {
       query: "LEGO",
       results: [{
         title: "LEGO 43015",
         normalPrice: 1959,
         damagedPrice: 1852,
-        damagedQuantity: 2,
         listPrice: 2799,
         url: "https://www.tw.coupang.com/products/43015",
         imageUrl: null
       }]
     });
+    assert.deepEqual(stored, [{
+      query: "LEGO",
+      results: [{
+        title: "LEGO 43015",
+        normalPrice: 1959,
+        damagedPrice: 1852,
+        listPrice: 2799,
+        url: "https://www.tw.coupang.com/products/43015",
+        imageUrl: null
+      }]
+    }]);
+  } finally {
+    await close();
+  }
+});
+
+test("GET /api/coupang/damaged-box/latest returns the last successful search only", async () => {
+  const snapshot = {
+    query: "LEGO",
+    searchedAt: "2026-08-12T04:00:00.000Z",
+    results: [{ title: "LEGO 60500", normalPrice: 625, damagedPrice: 624, listPrice: 999 }]
+  };
+  const { baseUrl, close } = await startTestServer({
+    coupangDamagedBoxSnapshotRepository: {
+      async save() {},
+      async get() {
+        return snapshot;
+      }
+    }
+  });
+
+  try {
+    const response = await fetch(baseUrl + "/api/coupang/damaged-box/latest");
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { snapshot });
   } finally {
     await close();
   }
@@ -186,7 +229,8 @@ async function startTestServer(options = {}) {
     publicDir: options.publicDir || new URL(".", import.meta.url),
     iopenVerifier: options.iopenVerifier,
     coupangDamagedBoxSearcher: options.coupangDamagedBoxSearcher,
-    historyRepository: options.historyRepository
+    historyRepository: options.historyRepository,
+    coupangDamagedBoxSnapshotRepository: options.coupangDamagedBoxSnapshotRepository
   }));
 
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));

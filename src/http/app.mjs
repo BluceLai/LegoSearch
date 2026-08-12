@@ -17,6 +17,7 @@ export function createRequestHandler({
   publicDir,
   iopenVerifier,
   coupangDamagedBoxSearcher,
+  coupangDamagedBoxSnapshotRepository = null,
   historyRepository = null
 }) {
   return async function requestHandler(request, response) {
@@ -47,14 +48,23 @@ export function createRequestHandler({
         return;
       }
 
+      if (url.pathname === "/api/coupang/damaged-box/latest") {
+        sendJson(response, 200, {
+          snapshot: coupangDamagedBoxSnapshotRepository
+            ? await coupangDamagedBoxSnapshotRepository.get()
+            : null
+        });
+        return;
+      }
+
       if (url.pathname === "/api/coupang/damaged-box") {
         if (!coupangDamagedBoxSearcher) {
           throw new Error("酷澎盒損搜尋服務尚未設定。");
         }
 
         const query = "LEGO";
-        const includeImages = url.searchParams.get("images") === "1";
-        const results = await coupangDamagedBoxSearcher({ query, includeImages });
+        const results = await coupangDamagedBoxSearcher({ query });
+        await safelySaveCoupangDamagedBoxSnapshot(coupangDamagedBoxSnapshotRepository, { query, results });
         sendJson(response, 200, { query, results });
         return;
       }
@@ -76,6 +86,14 @@ export function createRequestHandler({
       });
     }
   };
+}
+
+async function safelySaveCoupangDamagedBoxSnapshot(repository, snapshot) {
+  try {
+    await repository?.save(snapshot);
+  } catch {
+    // A completed search can still be shown when the optional local snapshot cannot be written.
+  }
 }
 
 async function safelyRecordHistory(historyRepository, payload) {

@@ -15,7 +15,6 @@ const coupangDamagedForm = document.querySelector("#coupang-damaged-form");
 const coupangDamagedResultsNode = document.querySelector("#coupang-damaged-results");
 const coupangDamagedStatus = document.querySelector("#coupang-damaged-status");
 const coupangDamagedSearchButton = document.querySelector("#coupang-damaged-search-button");
-const showCoupangDamagedThumbnails = document.querySelector("#show-coupang-damaged-thumbnails");
 const resultsNode = document.querySelector("#results");
 const lowestResultsNode = document.querySelector("#lowest-results");
 const officialPricesNode = document.querySelector("#official-prices");
@@ -65,14 +64,6 @@ coupangDamagedForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   await searchCoupangDamagedBox();
 });
-showCoupangDamagedThumbnails.addEventListener("change", async () => {
-  if (showCoupangDamagedThumbnails.checked && coupangDamagedResults.length) {
-    await searchCoupangDamagedBox();
-    return;
-  }
-  renderCoupangDamagedBoxResults();
-});
-
 await boot();
 
 async function boot() {
@@ -104,6 +95,7 @@ async function boot() {
 
     renderEmpty("\u53ef\u4ee5\u958b\u59cb\u641c\u5c0b\u3002");
     await refreshHistory();
+    await loadLatestCoupangDamagedBoxSnapshot();
   } catch {
     showStartupError("\u7121\u6cd5\u9023\u4e0a LegoSearch \u670d\u52d9\u3002\u8acb\u57f7\u884c start-legosearch.bat \u5f8c\u91cd\u65b0\u6574\u7406\u3002");
   }
@@ -197,10 +189,7 @@ async function searchCoupangDamagedBox() {
   coupangDamagedResultsNode.replaceChildren();
 
   try {
-    const params = new URLSearchParams({
-      images: showCoupangDamagedThumbnails.checked ? "1" : "0"
-    });
-    const response = await fetch("/api/coupang/damaged-box?" + params);
+    const response = await fetch("/api/coupang/damaged-box");
     const body = await response.json();
 
     if (!response.ok) {
@@ -211,17 +200,33 @@ async function searchCoupangDamagedBox() {
     coupangDamagedStatus.textContent = String(coupangDamagedResults.length) + " \u7b46\u76d2\u640d\u5546\u54c1";
     renderCoupangDamagedBoxResults();
   } catch (error) {
-    coupangDamagedResults = [];
-    coupangDamagedStatus.textContent = error.message;
+    coupangDamagedStatus.textContent = coupangDamagedResults.length
+      ? `${error.message}，已保留上次搜尋結果。`
+      : error.message;
     renderCoupangDamagedBoxResults();
   } finally {
     coupangDamagedSearchButton.disabled = false;
   }
 }
 
-function renderCoupangDamagedBoxResults() {
-  coupangDamagedResultsNode.classList.toggle("with-thumbnails", showCoupangDamagedThumbnails.checked);
+async function loadLatestCoupangDamagedBoxSnapshot() {
+  try {
+    const response = await fetch("/api/coupang/damaged-box/latest");
+    const body = await response.json();
 
+    if (!response.ok || !body.snapshot) {
+      return;
+    }
+
+    coupangDamagedResults = body.snapshot.results || [];
+    coupangDamagedStatus.textContent = `上次搜尋：${coupangDamagedResults.length} 筆盒損商品（${formatDate(body.snapshot.searchedAt)}）`;
+    renderCoupangDamagedBoxResults();
+  } catch {
+    // The box-damage tab remains available when no previous local snapshot exists.
+  }
+}
+
+function renderCoupangDamagedBoxResults() {
   if (!coupangDamagedResults.length) {
     const empty = document.createElement("div");
     empty.className = "empty";
@@ -240,46 +245,37 @@ function renderCoupangDamagedBoxResult(item) {
   details.className = "coupang-damaged-details";
   const title = document.createElement("h3");
   title.textContent = item.title;
-  const prices = document.createElement("dl");
-  prices.className = "coupang-damaged-prices";
-  prices.replaceChildren(
+  const priceLine = document.createElement("div");
+  priceLine.className = "coupang-damaged-price-line";
+  priceLine.replaceChildren(
+    renderCoupangDamagedPrice("\u5b9a\u50f9", item.listPrice),
     renderCoupangDamagedPrice("\u7121\u76d2\u640d", item.normalPrice),
-    renderCoupangDamagedPrice("\u76d2\u640d", item.damagedPrice, true),
-    renderCoupangDamagedPrice("\u76d2\u640d\u5eab\u5b58", item.damagedQuantity, false, "\u4ef6"),
-    renderCoupangDamagedPrice("\u5b9a\u50f9", item.listPrice)
+    renderCoupangDamagedPrice("\u76d2\u640d", item.damagedPrice, true)
   );
   const link = document.createElement("a");
   link.href = item.url;
   link.target = "_blank";
   link.rel = "noreferrer";
   link.textContent = "\u67e5\u770b";
-  details.append(title, prices, link);
-
-  if (showCoupangDamagedThumbnails.checked && item.imageUrl) {
-    const image = document.createElement("img");
-    image.src = item.imageUrl;
-    image.alt = "";
-    image.loading = "lazy";
-    node.append(image);
-  }
+  priceLine.append(link);
+  details.append(title, priceLine);
 
   node.append(details);
   return node;
 }
 
-function renderCoupangDamagedPrice(label, value, emphasize = false, suffix = "") {
-  const fragment = document.createDocumentFragment();
-  const term = document.createElement("dt");
-  term.textContent = label;
-  const detail = document.createElement("dd");
-  detail.textContent = value === null || value === undefined
-    ? "--"
-    : suffix ? String(value) + suffix : money.format(value);
+function renderCoupangDamagedPrice(label, value, emphasize = false) {
+  const detail = document.createElement("span");
+  detail.className = "coupang-damaged-price";
+  const name = document.createElement("span");
+  name.textContent = label;
+  const amount = document.createElement("strong");
+  amount.textContent = value === null || value === undefined ? "--" : money.format(value);
   if (emphasize) {
-    detail.className = "damaged-price";
+    amount.className = "damaged-price";
   }
-  fragment.append(term, detail);
-  return fragment;
+  detail.append(name, amount);
+  return detail;
 }
 
 function renderRecentQueries() {

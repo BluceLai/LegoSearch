@@ -12,7 +12,7 @@ export function createCoupangDamagedBoxSearcher({
   createContext = createMarketplaceEdgeContext,
   schedule = (work) => scheduleMarketplaceBrowserWork(coupangProfileName, work)
 } = {}) {
-  return async function searchCoupangDamagedBox({ query, includeImages = false }) {
+  return async function searchCoupangDamagedBox({ query }) {
     return schedule(async () => {
       const context = await createContext({
         profileName: coupangProfileName,
@@ -23,8 +23,7 @@ export function createCoupangDamagedBoxSearcher({
         const platform = getPlatform("coupang");
         const candidates = (await findCandidates({
           context,
-          searchUrl: createCandidateSearchUrl(platform),
-          includeImages
+          searchUrl: createCandidateSearchUrl(platform)
         })).map((candidate) => ({
           ...candidate,
           url: absoluteMarketplaceUrl(candidate.url, platform.homepage)
@@ -34,8 +33,7 @@ export function createCoupangDamagedBoxSearcher({
         for (const candidate of candidates.slice(0, candidateLimit)) {
           const offer = await findDamagedBoxOffer({
             context,
-            candidate,
-            includeImages
+            candidate
           });
 
           if (offer) {
@@ -51,11 +49,11 @@ export function createCoupangDamagedBoxSearcher({
   };
 }
 
-async function findCandidates({ context, searchUrl, includeImages }) {
+async function findCandidates({ context, searchUrl }) {
   const page = await context.newPage();
 
   try {
-    await configurePage(page, includeImages);
+    await configurePage(page);
     await page.goto(searchUrl, {
       waitUntil: "domcontentloaded",
       timeout: 45_000
@@ -73,7 +71,7 @@ async function findCandidates({ context, searchUrl, includeImages }) {
   }
 }
 
-async function findDamagedBoxOffer({ context, candidate, includeImages }) {
+async function findDamagedBoxOffer({ context, candidate }) {
   let detailPage;
   try {
     const directOfferUrl = createOfferListUrl(candidate.url);
@@ -81,13 +79,12 @@ async function findDamagedBoxOffer({ context, candidate, includeImages }) {
       return await readDamagedBoxOffer({
         context,
         candidate,
-        includeImages,
         offerUrl: directOfferUrl
       });
     }
 
     detailPage = await context.newPage();
-    await configurePage(detailPage, includeImages);
+    await configurePage(detailPage);
     await detailPage.goto(candidate.url, {
       waitUntil: "domcontentloaded",
       timeout: 30_000
@@ -102,7 +99,6 @@ async function findDamagedBoxOffer({ context, candidate, includeImages }) {
     return await readDamagedBoxOffer({
       context,
       candidate,
-      includeImages,
       offerUrl: absoluteMarketplaceUrl(offerPath, candidate.url)
     });
   } catch {
@@ -112,11 +108,11 @@ async function findDamagedBoxOffer({ context, candidate, includeImages }) {
   }
 }
 
-async function readDamagedBoxOffer({ context, candidate, includeImages, offerUrl }) {
+async function readDamagedBoxOffer({ context, candidate, offerUrl }) {
   const offerPage = await context.newPage();
 
   try {
-    await configurePage(offerPage, includeImages);
+    await configurePage(offerPage);
     await offerPage.goto(offerUrl, {
       waitUntil: "domcontentloaded",
       timeout: 30_000
@@ -128,19 +124,17 @@ async function readDamagedBoxOffer({ context, candidate, includeImages, offerUrl
       title: candidate.title,
       ...prices,
       url: candidate.url,
-      imageUrl: includeImages ? candidate.imageUrl : null
+      imageUrl: null
     } : null;
   } finally {
     await offerPage.close();
   }
 }
 
-async function configurePage(page, includeImages) {
-  if (!includeImages) {
-    await page.route("**/*", (route) => route.request().resourceType() === "image"
-      ? route.abort()
-      : route.continue());
-  }
+async function configurePage(page) {
+  await page.route("**/*", (route) => route.request().resourceType() === "image"
+    ? route.abort()
+    : route.continue());
 }
 
 async function waitForOfferListLink(page) {
@@ -244,7 +238,6 @@ function extractDamagedOfferPrices() {
   return {
     normalPrice: normalRow ? toPrice(normalRow[3]) : null,
     damagedPrice: toPrice(damagedRow[2]),
-    damagedQuantity: null,
     listPrice: toPrice(damagedRow[1])
   };
 }
