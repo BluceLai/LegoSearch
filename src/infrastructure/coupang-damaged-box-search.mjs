@@ -23,7 +23,7 @@ export function createCoupangDamagedBoxSearcher({
         const platform = getPlatform("coupang");
         const candidates = (await findCandidates({
           context,
-          searchUrl: createCandidateSearchUrl(platform, query),
+          searchUrl: createCandidateSearchUrl(platform),
           includeImages
         })).map((candidate) => ({
           ...candidate,
@@ -31,7 +31,7 @@ export function createCoupangDamagedBoxSearcher({
         }));
         const results = [];
 
-        for (const candidate of selectCandidates(candidates, query).slice(0, candidateLimit)) {
+        for (const candidate of candidates.slice(0, candidateLimit)) {
           const offer = await findDamagedBoxOffer({
             context,
             candidate,
@@ -174,23 +174,10 @@ async function waitForOfferRows(page) {
   } catch {}
 }
 
-function createDamagedBoxQuery(value) {
-  const normalized = String(value || "").replace(/\s+/g, " ").trim();
-  const terms = normalized ? normalized.split(" ") : [];
-
-  if (!terms.some((term) => term.toLowerCase() === "lego")) {
-    terms.unshift("LEGO");
-  }
-  if (!terms.includes("\u76d2\u640d")) {
-    terms.push("\u76d2\u640d");
-  }
-
-  return terms.join(" ");
-}
-
-function createCandidateSearchUrl(platform, query) {
-  const url = new URL(platform.buildSearchUrl(createDamagedBoxQuery(query)));
+function createCandidateSearchUrl(platform) {
+  const url = new URL(platform.buildSearchUrl("LEGO"));
   url.searchParams.set("itemsCount", String(candidateLimit));
+  url.searchParams.set("offerCondition", "PACKAGE_DAMAGED");
   return url.toString();
 }
 
@@ -208,14 +195,6 @@ function createOfferListUrl(candidateUrl) {
   offerUrl.searchParams.set("vendorItemId", vendorItemId);
   offerUrl.searchParams.set("totalCount", "2");
   return offerUrl.toString();
-}
-
-function selectCandidates(candidates, query) {
-  const modelNumber = String(query || "").match(/\b\d{4,}\b/)?.[0];
-
-  return modelNumber
-    ? candidates.filter((candidate) => candidate.title.includes(modelNumber))
-    : candidates;
 }
 
 function extractCoupangCandidates() {

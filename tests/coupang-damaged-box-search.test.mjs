@@ -48,7 +48,7 @@ test("follows a product offer list and keeps only its damaged-box offer", async 
   }]);
 });
 
-test("requests the largest Coupang candidate page for the fixed LEGO scan", async () => {
+test("requests Coupang's damaged-package filter for the fixed LEGO scan", async () => {
   const navigatedUrls = [];
   const search = createCoupangDamagedBoxSearcher({
     schedule: (work) => work(),
@@ -62,7 +62,39 @@ test("requests the largest Coupang candidate page for the fixed LEGO scan", asyn
 
   await search({ query: "LEGO" });
 
-  assert.match(navigatedUrls[0], /itemsCount=72/);
+  assert.match(navigatedUrls[0], /q=LEGO/);
+  assert.match(navigatedUrls[0], /offerCondition=PACKAGE_DAMAGED/);
+  assert.doesNotMatch(navigatedUrls[0], /%E7%9B%92%E6%90%8D/);
+});
+
+test("waits for the Chinese damaged-box offer label before reading prices", async () => {
+  const pages = [
+    pageThatEvaluates([{
+      title: "LEGO 60500",
+      url: "/products/43105",
+      imageUrl: null
+    }]),
+    pageThatEvaluates("/products/43105/item/43105/offerList?totalCount=1"),
+    pageThatWaitsForChineseDamagedBoxOffer({
+      normalPrice: null,
+      damagedPrice: 1673,
+      damagedQuantity: null,
+      listPrice: 2799
+    })
+  ];
+  const search = createCoupangDamagedBoxSearcher({
+    schedule: (work) => work(),
+    createContext: async () => ({
+      async newPage() {
+        return pages.shift();
+      },
+      async close() {}
+    })
+  });
+
+  const [result] = await search({ query: "43105" });
+
+  assert.equal(result.damagedPrice, 1673);
 });
 
 test("uses the normal offer row rather than reusing the damaged-box row", async () => {
@@ -173,6 +205,25 @@ function pageThatWaitsForOfferRows(result) {
     async route() {},
     async waitForFunction() {
       ready = true;
+    },
+    async evaluate() {
+      return ready ? result : null;
+    },
+    async close() {}
+  };
+}
+
+function pageThatWaitsForChineseDamagedBoxOffer(result) {
+  let ready = false;
+
+  return {
+    async goto() {},
+    async route() {},
+    async waitForFunction(predicate) {
+      const text = "\u76d2\u640d\u798f\u5229\u54c1 \u2013 \u5168\u65b0\u672a\u958b\u5c01";
+      ready = Function("document", "return (" + predicate.toString() + ")();")({
+        body: { innerText: text }
+      });
     },
     async evaluate() {
       return ready ? result : null;
