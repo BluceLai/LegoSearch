@@ -29,7 +29,7 @@ export function createCoupangDamagedBoxSnapshotRepository({
 async function readSnapshot(filePath) {
   try {
     const snapshot = JSON.parse(await readFile(filePath, "utf8"));
-    return Array.isArray(snapshot?.results) ? snapshot : null;
+    return Array.isArray(snapshot?.results) && snapshot.results.length ? snapshot : null;
   } catch (error) {
     if (error?.code === "ENOENT" || error instanceof SyntaxError) {
       return null;

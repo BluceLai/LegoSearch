@@ -129,6 +129,10 @@ async function streamCoupangDamagedBoxSearch({ response, searcher, snapshotRepos
 }
 
 async function safelySaveCoupangDamagedBoxSnapshot(repository, snapshot) {
+  if (!snapshot.results.length) {
+    return;
+  }
+
   try {
     await repository?.save(snapshot);
   } catch {

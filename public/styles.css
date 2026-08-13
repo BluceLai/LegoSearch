@@ -433,6 +433,31 @@ button:hover {
   border-top: 2px solid var(--ink);
 }
 
+.coupang-damaged-history {
+  display: grid;
+  gap: 10px;
+  padding-top: 18px;
+}
+
+.coupang-damaged-history h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.coupang-damaged-history-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.coupang-damaged-history-summary time {
+  color: var(--muted);
+}
+
 .history-group {
   border-bottom: 1px solid var(--line);
 }
@@ -724,6 +749,14 @@ a {
   .history-date {
     grid-template-columns: 1fr;
     gap: 6px;
+  }
+
+  .coupang-damaged-history-summary {
+    grid-template-columns: 1fr auto;
+  }
+
+  .coupang-damaged-history-summary button {
+    grid-column: 1 / -1;
   }
 
   .coupang-damaged-form {

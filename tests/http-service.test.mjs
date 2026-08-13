@@ -169,6 +169,32 @@ test("GET /api/coupang/damaged-box/stream sends matching offers before completio
   }
 });
 
+test("GET /api/coupang/damaged-box/stream keeps the previous snapshot when no offer matches", async () => {
+  const stored = [];
+  const { baseUrl, close } = await startTestServer({
+    coupangDamagedBoxSearcher: async () => [],
+    coupangDamagedBoxSnapshotRepository: {
+      async save(snapshot) {
+        stored.push(snapshot);
+      },
+      async get() {
+        return null;
+      }
+    }
+  });
+
+  try {
+    const response = await fetch(baseUrl + "/api/coupang/damaged-box/stream");
+    const body = await response.text();
+
+    assert.equal(response.status, 200);
+    assert.match(body, /event: complete/);
+    assert.deepEqual(stored, []);
+  } finally {
+    await close();
+  }
+});
+
 test("records a completed search and returns grouped daily price history", async () => {
   const recorded = [];
   const history = [{

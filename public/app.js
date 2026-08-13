@@ -9,6 +9,7 @@ const coupangDamagedView = document.querySelector("#coupang-damaged-view");
 const searchTab = document.querySelector("#search-tab");
 const coupangDamagedTab = document.querySelector("#coupang-damaged-tab");
 const historyResultsNode = document.querySelector("#history-results");
+const coupangDamagedHistoryNode = document.querySelector("#coupang-damaged-history");
 const coupangDamagedForm = document.querySelector("#coupang-damaged-form");
 const coupangDamagedResultsNode = document.querySelector("#coupang-damaged-results");
 const coupangDamagedStatus = document.querySelector("#coupang-damaged-status");
@@ -34,6 +35,7 @@ let officialPrices = [];
 let officialReferenceTwd = null;
 let history = [];
 let coupangDamagedResults = [];
+let coupangDamagedSnapshot = null;
 
 const money = new Intl.NumberFormat("zh-TW", {
   style: "currency",
@@ -212,6 +214,14 @@ function streamCoupangDamagedBoxResults() {
       const body = JSON.parse(event.data);
       completed = true;
       coupangDamagedResults = body.results || coupangDamagedResults;
+      if (coupangDamagedResults.length) {
+        coupangDamagedSnapshot = {
+          query: body.query,
+          searchedAt: new Date().toISOString(),
+          results: coupangDamagedResults
+        };
+        renderCoupangDamagedHistory();
+      }
       coupangDamagedStatus.textContent = `${coupangDamagedResults.length} \u7b46\u76d2\u640d\u5546\u54c1`;
       renderCoupangDamagedBoxResults();
       stream.close();
@@ -242,11 +252,39 @@ async function loadLatestCoupangDamagedBoxSnapshot() {
     }
 
     coupangDamagedResults = body.snapshot.results || [];
+    coupangDamagedSnapshot = body.snapshot;
     coupangDamagedStatus.textContent = `上次搜尋：${coupangDamagedResults.length} 筆盒損商品（${formatDate(body.snapshot.searchedAt)}）`;
     renderCoupangDamagedBoxResults();
+    renderCoupangDamagedHistory();
   } catch {
     // The box-damage tab remains available when no previous local snapshot exists.
   }
+}
+
+function renderCoupangDamagedHistory() {
+  coupangDamagedHistoryNode.hidden = !coupangDamagedSnapshot?.results?.length;
+
+  if (coupangDamagedHistoryNode.hidden) {
+    coupangDamagedHistoryNode.replaceChildren();
+    return;
+  }
+
+  const heading = document.createElement("h3");
+  heading.textContent = "酷澎盒損最後搜尋";
+  const summary = document.createElement("div");
+  summary.className = "coupang-damaged-history-summary";
+  const time = document.createElement("time");
+  time.dateTime = coupangDamagedSnapshot.searchedAt;
+  time.textContent = formatDate(coupangDamagedSnapshot.searchedAt);
+  const count = document.createElement("strong");
+  count.textContent = `${coupangDamagedSnapshot.results.length} 筆盒損商品`;
+  const open = document.createElement("button");
+  open.type = "button";
+  open.className = "secondary-button";
+  open.textContent = "查看結果";
+  open.addEventListener("click", () => setActiveView("coupang-damaged"));
+  summary.append(time, count, open);
+  coupangDamagedHistoryNode.replaceChildren(heading, summary);
 }
 
 function renderCoupangDamagedBoxResults() {
