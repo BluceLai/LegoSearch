@@ -222,7 +222,7 @@ function streamCoupangDamagedBoxResults() {
         };
         renderCoupangDamagedHistory();
       }
-      coupangDamagedStatus.textContent = `${coupangDamagedResults.length} \u7b46\u76d2\u640d\u5546\u54c1`;
+      coupangDamagedStatus.textContent = `\u641c\u5c0b\u5b8c\u6210\uff0c\u5171 ${coupangDamagedResults.length} \u7b46\u76d2\u640d\u5546\u54c1`;
       renderCoupangDamagedBoxResults();
       stream.close();
       resolve();
