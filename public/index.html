@@ -18,29 +18,28 @@
           <p class="kicker">&#x53f0;&#x7063;&#x96fb;&#x5546;&#x50f9;&#x683c;&#x641c;&#x5c0b;</p>
           <h1>LegoSearch</h1>
         </div>
-
-        <form id="search-form" class="search-form">
-          <label class="field">
-            <span>&#x95dc;&#x9375;&#x5b57;&#x6216;&#x578b;&#x865f;</span>
-            <input id="query" type="search" value="10305" autocomplete="off" />
-            <select id="recent-searches" aria-label="&#x6700;&#x8fd1;&#x67e5;&#x8a62;">
-              <option value="">&#x6700;&#x8fd1; 20 &#x7b46;&#x67e5;&#x8a62;</option>
-            </select>
-          </label>
-
-          <div id="platforms" class="platform-grid"></div>
-
-          <button type="submit">&#x641c;&#x5c0b;&#x50f9;&#x683c;</button>
-        </form>
       </section>
 
       <nav class="view-tabs" role="tablist" aria-label="&#x6aa2;&#x8996;">
         <button id="search-tab" class="view-tab" type="button" role="tab" aria-selected="true" aria-controls="search-view">&#x50f9;&#x683c;&#x641c;&#x5c0b;</button>
         <button id="coupang-damaged-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="coupang-damaged-view">&#x9177;&#x6f8e;&#x76d2;&#x640d;</button>
-        <button id="history-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="history-view">&#x67e5;&#x8a62;&#x7d00;&#x9304;</button>
       </nav>
 
-      <section id="search-view">
+      <section id="search-view" role="tabpanel" aria-labelledby="search-tab">
+      <form id="search-form" class="search-form price-search-form">
+        <label class="field">
+          <span>&#x95dc;&#x9375;&#x5b57;&#x6216;&#x578b;&#x865f;</span>
+          <input id="query" type="search" value="10305" autocomplete="off" />
+          <select id="recent-searches" aria-label="&#x6700;&#x8fd1;&#x67e5;&#x8a62;">
+            <option value="">&#x6700;&#x8fd1; 20 &#x7b46;&#x67e5;&#x8a62;</option>
+          </select>
+        </label>
+
+        <div id="platforms" class="platform-grid"></div>
+
+        <button type="submit">&#x641c;&#x5c0b;&#x50f9;&#x683c;</button>
+      </form>
+
       <section class="summary-bar">
         <div>
           <strong id="summary-title">&#x5c31;&#x7dd2;</strong>
@@ -82,11 +81,10 @@
       <p id="open-instructions" class="startup-notice" hidden></p>
       <section id="lowest-results" class="lowest-results" hidden></section>
       <section id="results" class="results"></section>
-      </section>
-
-      <section id="history-view" class="history-view" role="tabpanel" aria-labelledby="history-tab" hidden>
-        <h2>&#x67e5;&#x8a62;&#x7d00;&#x9304;</h2>
+      <section class="history-view" aria-labelledby="history-title">
+        <h2 id="history-title">&#x67e5;&#x8a62;&#x7d00;&#x9304;</h2>
         <section id="history-results" class="history-results"></section>
+      </section>
       </section>
 
       <section id="coupang-damaged-view" class="coupang-damaged-view" role="tabpanel" aria-labelledby="coupang-damaged-tab" hidden>

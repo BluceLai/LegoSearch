@@ -137,6 +137,38 @@ test("GET /api/coupang/damaged-box/latest returns the last successful search onl
   }
 });
 
+test("GET /api/coupang/damaged-box/stream sends matching offers before completion", async () => {
+  const stored = [];
+  const offer = { title: "LEGO 43015", normalPrice: 1959, damagedPrice: 1852, listPrice: 2799 };
+  const { baseUrl, close } = await startTestServer({
+    coupangDamagedBoxSearcher: async ({ onResult }) => {
+      await onResult(offer);
+      return [offer];
+    },
+    coupangDamagedBoxSnapshotRepository: {
+      async save(snapshot) {
+        stored.push(snapshot);
+      },
+      async get() {
+        return null;
+      }
+    }
+  });
+
+  try {
+    const response = await fetch(baseUrl + "/api/coupang/damaged-box/stream");
+    const body = await response.text();
+
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get("content-type"), /^text\/event-stream/);
+    assert.match(body, /event: result\ndata: {"title":"LEGO 43015"/);
+    assert.match(body, /event: complete\ndata: {"query":"LEGO","results":/);
+    assert.deepEqual(stored, [{ query: "LEGO", results: [offer] }]);
+  } finally {
+    await close();
+  }
+});
+
 test("records a completed search and returns grouped daily price history", async () => {
   const recorded = [];
   const history = [{

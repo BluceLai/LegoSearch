@@ -4,6 +4,7 @@ import { createCoupangDamagedBoxSearcher } from "../src/infrastructure/coupang-d
 
 test("follows a product offer list and keeps only its damaged-box offer", async () => {
   const contextOptions = [];
+  const emitted = [];
   const pages = [
     pageThatEvaluates([{
       title: "LEGO Lionel Messi 43015",
@@ -30,7 +31,10 @@ test("follows a product offer list and keeps only its damaged-box offer", async 
     }
   });
 
-  const results = await search({ query: "43015" });
+  const results = await search({
+    query: "43015",
+    onResult: (result) => emitted.push(result)
+  });
 
   assert.deepEqual(contextOptions, [{
     profileName: "coupang-damaged-box-browser-profile-v2",
@@ -44,6 +48,7 @@ test("follows a product offer list and keeps only its damaged-box offer", async 
     url: "https://www.tw.coupang.com/products/43015",
     imageUrl: null
   }]);
+  assert.deepEqual(emitted, results);
 });
 
 test("requests Coupang's damaged-package filter for the fixed LEGO scan", async () => {

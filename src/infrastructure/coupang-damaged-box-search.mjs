@@ -12,7 +12,7 @@ export function createCoupangDamagedBoxSearcher({
   createContext = createMarketplaceEdgeContext,
   schedule = (work) => scheduleMarketplaceBrowserWork(coupangProfileName, work)
 } = {}) {
-  return async function searchCoupangDamagedBox({ query }) {
+  return async function searchCoupangDamagedBox({ query, onResult = async () => {} }) {
     return schedule(async () => {
       const context = await createContext({
         profileName: coupangProfileName,
@@ -38,6 +38,7 @@ export function createCoupangDamagedBoxSearcher({
 
           if (offer) {
             results.push(offer);
+            await onResult(offer);
           }
         }
 

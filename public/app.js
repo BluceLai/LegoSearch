@@ -5,10 +5,8 @@ const queryInput = document.querySelector("#query");
 const recentSearchesSelect = document.querySelector("#recent-searches");
 const platformsNode = document.querySelector("#platforms");
 const searchView = document.querySelector("#search-view");
-const historyView = document.querySelector("#history-view");
 const coupangDamagedView = document.querySelector("#coupang-damaged-view");
 const searchTab = document.querySelector("#search-tab");
-const historyTab = document.querySelector("#history-tab");
 const coupangDamagedTab = document.querySelector("#coupang-damaged-tab");
 const historyResultsNode = document.querySelector("#history-results");
 const coupangDamagedForm = document.querySelector("#coupang-damaged-form");
@@ -58,7 +56,6 @@ recentSearchesSelect.addEventListener("change", async () => {
   await search();
 });
 searchTab.addEventListener("click", () => setActiveView("search"));
-historyTab.addEventListener("click", () => setActiveView("history"));
 coupangDamagedTab.addEventListener("click", () => setActiveView("coupang-damaged"));
 coupangDamagedForm.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -176,37 +173,63 @@ async function refreshHistory() {
 
 function setActiveView(view) {
   searchView.hidden = view !== "search";
-  historyView.hidden = view !== "history";
   coupangDamagedView.hidden = view !== "coupang-damaged";
   searchTab.setAttribute("aria-selected", String(view === "search"));
-  historyTab.setAttribute("aria-selected", String(view === "history"));
   coupangDamagedTab.setAttribute("aria-selected", String(view === "coupang-damaged"));
 }
 
 async function searchCoupangDamagedBox() {
   coupangDamagedSearchButton.disabled = true;
-  coupangDamagedStatus.textContent = "\u641c\u5c0b\u4e2d...";
+  const previousResults = coupangDamagedResults;
+  coupangDamagedResults = [];
+  coupangDamagedStatus.textContent = "\u641c\u5c0b\u4e2d\uff0c\u5df2\u627e\u5230 0 \u7b46...";
   coupangDamagedResultsNode.replaceChildren();
 
   try {
-    const response = await fetch("/api/coupang/damaged-box");
-    const body = await response.json();
-
-    if (!response.ok) {
-      throw new Error(body.error || "\u9177\u6f8e\u76d2\u640d\u641c\u5c0b\u5931\u6557\u3002");
-    }
-
-    coupangDamagedResults = body.results || [];
-    coupangDamagedStatus.textContent = String(coupangDamagedResults.length) + " \u7b46\u76d2\u640d\u5546\u54c1";
-    renderCoupangDamagedBoxResults();
+    await streamCoupangDamagedBoxResults();
   } catch (error) {
-    coupangDamagedStatus.textContent = coupangDamagedResults.length
-      ? `${error.message}，已保留上次搜尋結果。`
+    coupangDamagedResults = previousResults;
+    coupangDamagedStatus.textContent = previousResults.length
+      ? `${error.message}\uff0c\u5df2\u4fdd\u7559\u4e0a\u6b21\u641c\u5c0b\u7d50\u679c\u3002`
       : error.message;
     renderCoupangDamagedBoxResults();
   } finally {
     coupangDamagedSearchButton.disabled = false;
   }
+}
+
+function streamCoupangDamagedBoxResults() {
+  return new Promise((resolve, reject) => {
+    const stream = new EventSource("/api/coupang/damaged-box/stream");
+    let completed = false;
+
+    stream.addEventListener("result", (event) => {
+      coupangDamagedResults.push(JSON.parse(event.data));
+      coupangDamagedStatus.textContent = `\u641c\u5c0b\u4e2d\uff0c\u5df2\u627e\u5230 ${coupangDamagedResults.length} \u7b46...`;
+      renderCoupangDamagedBoxResults();
+    });
+    stream.addEventListener("complete", (event) => {
+      const body = JSON.parse(event.data);
+      completed = true;
+      coupangDamagedResults = body.results || coupangDamagedResults;
+      coupangDamagedStatus.textContent = `${coupangDamagedResults.length} \u7b46\u76d2\u640d\u5546\u54c1`;
+      renderCoupangDamagedBoxResults();
+      stream.close();
+      resolve();
+    });
+    stream.addEventListener("error", (event) => {
+      const body = JSON.parse(event.data);
+      completed = true;
+      stream.close();
+      reject(new Error(body.error || "\u9177\u6f8e\u76d2\u640d\u641c\u5c0b\u5931\u6557\u3002"));
+    });
+    stream.onerror = () => {
+      if (!completed) {
+        stream.close();
+        reject(new Error("\u9177\u6f8e\u76d2\u640d\u641c\u5c0b\u9023\u7dda\u4e2d\u65b7\u3002"));
+      }
+    };
+  });
 }
 
 async function loadLatestCoupangDamagedBoxSnapshot() {
@@ -250,7 +273,7 @@ function renderCoupangDamagedBoxResult(item) {
   priceLine.replaceChildren(
     renderCoupangDamagedPrice("\u5b9a\u50f9", item.listPrice),
     renderCoupangDamagedPrice("\u7121\u76d2\u640d", item.normalPrice),
-    renderCoupangDamagedPrice("\u76d2\u640d", item.damagedPrice, true)
+    renderCoupangDamagedPrice("\u76d2\u640d", item.damagedPrice, true, item.listPrice)
   );
   const link = document.createElement("a");
   link.href = item.url;
@@ -264,7 +287,7 @@ function renderCoupangDamagedBoxResult(item) {
   return node;
 }
 
-function renderCoupangDamagedPrice(label, value, emphasize = false) {
+function renderCoupangDamagedPrice(label, value, emphasize = false, listPrice = null) {
   const detail = document.createElement("span");
   detail.className = "coupang-damaged-price";
   const name = document.createElement("span");
@@ -272,10 +295,21 @@ function renderCoupangDamagedPrice(label, value, emphasize = false) {
   const amount = document.createElement("strong");
   amount.textContent = value === null || value === undefined ? "--" : money.format(value);
   if (emphasize) {
+    amount.textContent += formatCoupangDamagedDiscount(value, listPrice);
+  }
+  if (emphasize) {
     amount.className = "damaged-price";
   }
   detail.append(name, amount);
   return detail;
+}
+
+function formatCoupangDamagedDiscount(damagedPrice, listPrice) {
+  if (!Number.isFinite(damagedPrice) || !Number.isFinite(listPrice) || listPrice <= 0) {
+    return "";
+  }
+
+  return ` (${Math.round((damagedPrice / listPrice) * 100)}\u6298)`;
 }
 
 function renderRecentQueries() {

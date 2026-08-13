@@ -57,6 +57,15 @@ export function createRequestHandler({
         return;
       }
 
+      if (url.pathname === "/api/coupang/damaged-box/stream") {
+        await streamCoupangDamagedBoxSearch({
+          response,
+          searcher: coupangDamagedBoxSearcher,
+          snapshotRepository: coupangDamagedBoxSnapshotRepository
+        });
+        return;
+      }
+
       if (url.pathname === "/api/coupang/damaged-box") {
         if (!coupangDamagedBoxSearcher) {
           throw new Error("酷澎盒損搜尋服務尚未設定。");
@@ -88,6 +97,37 @@ export function createRequestHandler({
   };
 }
 
+async function streamCoupangDamagedBoxSearch({ response, searcher, snapshotRepository }) {
+  if (!searcher) {
+    throw new Error("酷澎盒損搜尋服務尚未設定。");
+  }
+
+  response.writeHead(200, {
+    "content-type": "text/event-stream; charset=utf-8",
+    "cache-control": "no-cache",
+    connection: "keep-alive"
+  });
+
+  const query = "LEGO";
+  const results = [];
+
+  try {
+    await searcher({
+      query,
+      onResult: async (result) => {
+        results.push(result);
+        sendEvent(response, "result", result);
+      }
+    });
+    await safelySaveCoupangDamagedBoxSnapshot(snapshotRepository, { query, results });
+    sendEvent(response, "complete", { query, results });
+  } catch (error) {
+    sendEvent(response, "error", { error: error.message });
+  } finally {
+    response.end();
+  }
+}
+
 async function safelySaveCoupangDamagedBoxSnapshot(repository, snapshot) {
   try {
     await repository?.save(snapshot);
@@ -110,6 +150,10 @@ function sendJson(response, status, payload) {
     "cache-control": "no-store"
   });
   response.end(JSON.stringify(payload));
+}
+
+function sendEvent(response, event, payload) {
+  response.write(`event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`);
 }
 
 async function serveStatic({ url, response, publicDir }) {
