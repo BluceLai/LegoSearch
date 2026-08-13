@@ -282,9 +282,19 @@ function renderCoupangDamagedHistory() {
   open.type = "button";
   open.className = "secondary-button";
   open.textContent = "查看結果";
-  open.addEventListener("click", () => setActiveView("coupang-damaged"));
+  open.addEventListener("click", restoreCoupangDamagedBoxSnapshot);
   summary.append(time, count, open);
   coupangDamagedHistoryNode.replaceChildren(heading, summary);
+}
+
+function restoreCoupangDamagedBoxSnapshot() {
+  if (!coupangDamagedSnapshot?.results?.length) {
+    return;
+  }
+
+  coupangDamagedResults = [...coupangDamagedSnapshot.results];
+  coupangDamagedStatus.textContent = `上次搜尋：${coupangDamagedResults.length} 筆盒損商品（${formatDate(coupangDamagedSnapshot.searchedAt)}）`;
+  renderCoupangDamagedBoxResults();
 }
 
 function renderCoupangDamagedBoxResults() {

@@ -33,3 +33,10 @@ test("web entrypoint keeps local assets relative and includes a startup notice",
   assert.match(html, /id="search-view"[\s\S]*id="search-form"/);
   assert.match(html, /id="coupang-damaged-status"/);
 });
+
+test("damaged-box history can restore its saved result list", async () => {
+  const app = await readFile(new URL("../public/app.js", import.meta.url), "utf8");
+
+  assert.match(app, /open\.addEventListener\("click", restoreCoupangDamagedBoxSnapshot\)/);
+  assert.match(app, /function restoreCoupangDamagedBoxSnapshot\(\)[\s\S]*coupangDamagedResults = \[\.\.\.coupangDamagedSnapshot\.results\]/);
+});
