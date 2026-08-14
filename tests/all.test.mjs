@@ -12,6 +12,7 @@ import "./coupang-damaged-box-search.test.mjs";
 import "./coupang-damaged-box-snapshot-repository.test.mjs";
 import "./desktop-packaging.test.mjs";
 import "./desktop-data-directory.test.mjs";
+import "./startup-diagnostics.test.mjs";
 import "./iopen-verifier.test.mjs";
 import "./result-organization.test.mjs";
 import "./release-artifacts.test.mjs";
