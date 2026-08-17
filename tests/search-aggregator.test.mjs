@@ -61,6 +61,45 @@ test("turns platform failures into fallback search-link results", async () => {
   assert.equal(response.results[0].url, "https://mall.iopenmall.tw/iopen/index.php?prod_keyword=LEGO+75367&action=store_product_search");
 });
 
+test("returns completed marketplace lists when other marketplaces do not respond", async () => {
+  const aggregator = createSearchAggregator({
+    clients: {
+      iopen: async () => new Promise(() => {}),
+      pchome: async () => new Promise(() => {}),
+      momo: async () => [
+        result({ platformId: "momo", title: "MOMO 10305 Lion Knights Castle", price: 10999 })
+      ]
+    },
+    marketplaceSearchTimeoutMs: 5
+  });
+
+  const response = await aggregator.search({
+    text: "10305",
+    platforms: "iopen,momo,pchome"
+  });
+
+  assert.deepEqual(
+    response.results.map((item) => [item.platformId, item.source, item.price]),
+    [
+      ["momo", "marketplace", 10999],
+      ["iopen", "search-link", null],
+      ["pchome", "search-link", null]
+    ]
+  );
+  assert.deepEqual(response.errors, [
+    {
+      platformId: "iopen",
+      platformName: "iOPEN Mall",
+      message: "iOPEN Mall 搜尋逾時。"
+    },
+    {
+      platformId: "pchome",
+      platformName: "PChome",
+      message: "PChome 搜尋逾時。"
+    }
+  ]);
+});
+
 test("keeps only exact model-number matches while retaining platform search links", async () => {
   const aggregator = createSearchAggregator({
     clients: {

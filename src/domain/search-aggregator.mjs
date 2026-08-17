@@ -13,10 +13,13 @@ const accessoryIndicators = [
   /\b(?:instruction|manual|display case)\b/i
 ];
 
+const defaultMarketplaceSearchTimeoutMs = 12_000;
+
 export function createSearchAggregator({
   clients,
   resolveLegoSet = async () => null,
-  now = () => new Date()
+  now = () => new Date(),
+  marketplaceSearchTimeoutMs = defaultMarketplaceSearchTimeoutMs
 }) {
   return {
     async search(input) {
@@ -28,7 +31,8 @@ export function createSearchAggregator({
           platformId,
           query,
           clients,
-          searchedAt
+          searchedAt,
+          marketplaceSearchTimeoutMs
         }))
       );
       const legoSet = await resolveOfficialLegoSet(modelNumbers[0], resolveLegoSet);
@@ -38,7 +42,8 @@ export function createSearchAggregator({
         legoSet,
         modelNumbers,
         clients,
-        searchedAt
+        searchedAt,
+        marketplaceSearchTimeoutMs
       });
 
       return {
@@ -60,13 +65,23 @@ export function createSearchAggregator({
   };
 }
 
-async function searchOnePlatform({ platformId, query, clients, searchedAt }) {
+async function searchOnePlatform({
+  platformId,
+  query,
+  clients,
+  searchedAt,
+  marketplaceSearchTimeoutMs
+}) {
   const platform = getPlatform(platformId);
   const client = clients[platformId];
 
   try {
     const results = client
-      ? await client({ query: query.text, platform, searchedAt })
+      ? await withMarketplaceSearchTimeout({
+        search: client({ query: query.text, platform, searchedAt }),
+        platform,
+        timeoutMs: marketplaceSearchTimeoutMs
+      })
       : [];
 
     if (results.length) {
@@ -120,7 +135,14 @@ function filterPlatformResults({ platform, query, searchedAt, results }, modelNu
   })];
 }
 
-async function searchOfficialSetNames({ settled, legoSet, modelNumbers, clients, searchedAt }) {
+async function searchOfficialSetNames({
+  settled,
+  legoSet,
+  modelNumbers,
+  clients,
+  searchedAt,
+  marketplaceSearchTimeoutMs
+}) {
   const names = Array.isArray(legoSet?.names) ? legoSet.names : [];
   if (!names.length) {
     return new Map();
@@ -135,10 +157,14 @@ async function searchOfficialSetNames({ settled, legoSet, modelNumbers, clients,
 
   const searches = await Promise.all(platformsToExpand.flatMap((item) => names.map(async (name) => {
     try {
-      const results = await clients[item.platform.id]({
-        query: `LEGO ${name}`,
+      const results = await withMarketplaceSearchTimeout({
+        search: clients[item.platform.id]({
+          query: `LEGO ${name}`,
+          platform: item.platform,
+          searchedAt
+        }),
         platform: item.platform,
-        searchedAt
+        timeoutMs: marketplaceSearchTimeoutMs
       });
       return { platformId: item.platform.id, results };
     } catch {
@@ -153,6 +179,25 @@ async function searchOfficialSetNames({ settled, legoSet, modelNumbers, clients,
     ]);
     return byPlatform;
   }, new Map());
+}
+
+function withMarketplaceSearchTimeout({ search, platform, timeoutMs }) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error(`${platform.name} 搜尋逾時。`));
+    }, timeoutMs);
+
+    search.then(
+      (results) => {
+        clearTimeout(timer);
+        resolve(results);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      }
+    );
+  });
 }
 
 async function resolveOfficialLegoSet(setNumber, resolveLegoSet) {
