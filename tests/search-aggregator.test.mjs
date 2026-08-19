@@ -100,6 +100,27 @@ test("returns completed marketplace lists when other marketplaces do not respond
   ]);
 });
 
+test("returns exact marketplace matches when the official price lookup does not respond", async () => {
+  const aggregator = createSearchAggregator({
+    clients: {
+      momo: async () => [
+        result({ platformId: "momo", title: "MOMO LEGO 10305 Lion Knights Castle", price: 10999 })
+      ]
+    },
+    resolveLegoSet: () => new Promise(() => {}),
+    officialLookupTimeoutMs: 5
+  });
+
+  const response = await aggregator.search({ text: "10305", platforms: "momo" });
+
+  assert.deepEqual(
+    response.results.map((item) => [item.platformId, item.title, item.price]),
+    [["momo", "MOMO LEGO 10305 Lion Knights Castle", 10999]]
+  );
+  assert.deepEqual(response.officialPrices, []);
+  assert.equal(response.officialReferenceTwd, null);
+});
+
 test("keeps only exact model-number matches while retaining platform search links", async () => {
   const aggregator = createSearchAggregator({
     clients: {

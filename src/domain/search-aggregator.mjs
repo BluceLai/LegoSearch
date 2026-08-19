@@ -14,12 +14,14 @@ const accessoryIndicators = [
 ];
 
 const defaultMarketplaceSearchTimeoutMs = 12_000;
+const defaultOfficialLookupTimeoutMs = 8_000;
 
 export function createSearchAggregator({
   clients,
   resolveLegoSet = async () => null,
   now = () => new Date(),
-  marketplaceSearchTimeoutMs = defaultMarketplaceSearchTimeoutMs
+  marketplaceSearchTimeoutMs = defaultMarketplaceSearchTimeoutMs,
+  officialLookupTimeoutMs = defaultOfficialLookupTimeoutMs
 }) {
   return {
     async search(input) {
@@ -35,7 +37,10 @@ export function createSearchAggregator({
           marketplaceSearchTimeoutMs
         }))
       );
-      const legoSet = await resolveOfficialLegoSet(modelNumbers[0], resolveLegoSet);
+      const legoSet = await withOfficialLookupTimeout({
+        lookup: resolveOfficialLegoSet(modelNumbers[0], resolveLegoSet),
+        timeoutMs: officialLookupTimeoutMs
+      });
       const settled = await marketplaceSearches;
       const expandedResults = await searchOfficialSetNames({
         settled,
@@ -195,6 +200,23 @@ function withMarketplaceSearchTimeout({ search, platform, timeoutMs }) {
       (error) => {
         clearTimeout(timer);
         reject(error);
+      }
+    );
+  });
+}
+
+function withOfficialLookupTimeout({ lookup, timeoutMs }) {
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => resolve(null), timeoutMs);
+
+    lookup.then(
+      (set) => {
+        clearTimeout(timer);
+        resolve(set);
+      },
+      () => {
+        clearTimeout(timer);
+        resolve(null);
       }
     );
   });

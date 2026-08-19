@@ -18,7 +18,8 @@ test("web entrypoint keeps local assets relative and includes a startup notice",
   assert.match(html, /id="verify-iopen"/);
   assert.match(html, /class="group-toggle"/);
   assert.match(html, /id="platform-group-template"/);
-  assert.match(html, /id="recent-searches"/);
+  assert.match(html, /id="recent-searches-menu"/);
+  assert.match(html, /id="recent-searches-toggle"/);
   assert.match(html, /id="search-tab"/);
   assert.doesNotMatch(html, /id="history-tab"/);
   assert.match(html, /id="history-results"/);
@@ -39,4 +40,12 @@ test("damaged-box history can restore its saved result list", async () => {
 
   assert.match(app, /open\.addEventListener\("click", restoreCoupangDamagedBoxSnapshot\)/);
   assert.match(app, /function restoreCoupangDamagedBoxSnapshot\(\)[\s\S]*coupangDamagedResults = \[\.\.\.coupangDamagedSnapshot\.results\]/);
+});
+
+test("recent search entries offer an individual delete action", async () => {
+  const app = await readFile(new URL("../public/app.js", import.meta.url), "utf8");
+
+  assert.match(app, /function deleteRecentSearch\(setNumber\)/);
+  assert.match(app, /method: "DELETE"/);
+  assert.match(app, /new URLSearchParams\(\{ setNumber \}\)/);
 });

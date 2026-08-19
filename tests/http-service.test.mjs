@@ -241,6 +241,30 @@ test("records a completed search and returns grouped daily price history", async
   }
 });
 
+test("DELETE /api/history removes one set from the search history", async () => {
+  const removed = [];
+  const { baseUrl, close } = await startTestServer({
+    historyRepository: {
+      async record() {},
+      async list() {
+        return [];
+      },
+      async remove(setNumber) {
+        removed.push(setNumber);
+      }
+    }
+  });
+
+  try {
+    const response = await fetch(`${baseUrl}/api/history?setNumber=10305`, { method: "DELETE" });
+
+    assert.equal(response.status, 204);
+    assert.deepEqual(removed, ["10305"]);
+  } finally {
+    await close();
+  }
+});
+
 test("serves browser modules with a JavaScript content type", async () => {
   const { baseUrl, close } = await startTestServer({
     publicDir: new URL("../public/", import.meta.url)

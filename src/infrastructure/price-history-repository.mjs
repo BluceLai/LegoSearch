@@ -38,6 +38,20 @@ export function createPriceHistoryRepository({
       await pending;
       const entries = await readEntries(filePath);
       return groupBySet(entries);
+    },
+
+    async remove(setNumber) {
+      const write = pending.then(async () => {
+        const entries = await readEntries(filePath);
+        const remaining = entries.filter((entry) => entry.setNumber !== setNumber);
+
+        if (remaining.length !== entries.length) {
+          await writeEntries(filePath, remaining);
+        }
+      });
+
+      pending = write.catch(() => {});
+      return write;
     }
   };
 }

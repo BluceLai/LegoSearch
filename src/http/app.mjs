@@ -42,6 +42,18 @@ export function createRequestHandler({
       }
 
       if (url.pathname === "/api/history") {
+        if (request.method === "DELETE") {
+          const setNumber = url.searchParams.get("setNumber") || "";
+          if (!/^\d{4,6}$/.test(setNumber)) {
+            throw new ValidationError("請指定要刪除的樂高編號。");
+          }
+
+          await historyRepository?.remove(setNumber);
+          response.writeHead(204);
+          response.end();
+          return;
+        }
+
         sendJson(response, 200, {
           history: historyRepository ? await historyRepository.list() : []
         });

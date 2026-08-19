@@ -27,13 +27,14 @@
 
       <section id="search-view" role="tabpanel" aria-labelledby="search-tab">
       <form id="search-form" class="search-form price-search-form">
-        <label class="field">
+        <div class="field">
           <span>&#x95dc;&#x9375;&#x5b57;&#x6216;&#x578b;&#x865f;</span>
           <input id="query" type="search" value="10305" autocomplete="off" />
-          <select id="recent-searches" aria-label="&#x6700;&#x8fd1;&#x67e5;&#x8a62;">
-            <option value="">&#x6700;&#x8fd1; 20 &#x7b46;&#x67e5;&#x8a62;</option>
-          </select>
-        </label>
+          <div class="recent-searches">
+            <button id="recent-searches-toggle" class="recent-searches-toggle" type="button" aria-expanded="false" aria-controls="recent-searches-menu"></button>
+            <div id="recent-searches-menu" class="recent-searches-menu" aria-label="&#x6700;&#x8fd1;&#x67e5;&#x8a62;" hidden></div>
+          </div>
+        </div>
 
         <div id="platforms" class="platform-grid"></div>
 

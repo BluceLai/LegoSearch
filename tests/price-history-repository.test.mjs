@@ -74,6 +74,28 @@ test("keeps a model-number search even when no platform price can be parsed", as
   }
 });
 
+test("removes every historical date for one set number", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "lego-search-history-"));
+  const history = createPriceHistoryRepository({
+    filePath: join(directory, "price-history.json"),
+    now: () => new Date("2026-08-05T04:00:00.000Z")
+  });
+
+  try {
+    await history.record(searchSnapshot({ momoPrices: [11999], pchomePrices: [] }));
+    await history.record({
+      query: "LEGO 60500",
+      results: [{ platformId: "momo", platformName: "MOMO", price: 999 }]
+    });
+
+    await history.remove("10305");
+
+    assert.deepEqual((await history.list()).map((entry) => entry.setNumber), ["60500"]);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
 function searchSnapshot({ momoPrices, pchomePrices }) {
   return {
     query: "LEGO 10305",

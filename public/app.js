@@ -2,7 +2,8 @@ import { organizeResults } from "./result-organization.mjs";
 
 const form = document.querySelector("#search-form");
 const queryInput = document.querySelector("#query");
-const recentSearchesSelect = document.querySelector("#recent-searches");
+const recentSearchesToggle = document.querySelector("#recent-searches-toggle");
+const recentSearchesMenu = document.querySelector("#recent-searches-menu");
 const platformsNode = document.querySelector("#platforms");
 const searchView = document.querySelector("#search-view");
 const coupangDamagedView = document.querySelector("#coupang-damaged-view");
@@ -52,10 +53,10 @@ sortSelect.addEventListener("change", renderResults);
 discountFloorSelect.addEventListener("change", renderResults);
 showThumbnails.addEventListener("change", renderResults);
 verifyIopenButton.addEventListener("click", openIopenVerification);
-recentSearchesSelect.addEventListener("change", async () => {
-  if (!recentSearchesSelect.value) return;
-  queryInput.value = recentSearchesSelect.value;
-  await search();
+recentSearchesToggle.addEventListener("click", () => {
+  const expanded = recentSearchesToggle.getAttribute("aria-expanded") === "true";
+  recentSearchesToggle.setAttribute("aria-expanded", String(!expanded));
+  recentSearchesMenu.hidden = expanded;
 });
 searchTab.addEventListener("click", () => setActiveView("search"));
 coupangDamagedTab.addEventListener("click", () => setActiveView("coupang-damaged"));
@@ -361,16 +362,58 @@ function formatCoupangDamagedDiscount(damagedPrice, listPrice) {
 }
 
 function renderRecentQueries() {
-  const options = history.slice(0, 20).map((entry) => {
-    const option = document.createElement("option");
-    option.value = entry.query;
-    option.textContent = entry.setNumber;
-    return option;
+  const entries = history.slice(0, 20);
+  recentSearchesToggle.disabled = entries.length === 0;
+  recentSearchesToggle.textContent = entries.length
+    ? `最近 ${entries.length} 筆查詢`
+    : "尚無查詢紀錄";
+
+  const rows = entries.map((entry) => {
+    const row = document.createElement("div");
+    row.className = "recent-search-row";
+    const select = document.createElement("button");
+    select.type = "button";
+    select.className = "recent-search-select";
+    select.textContent = entry.setNumber;
+    select.addEventListener("click", async () => {
+      queryInput.value = entry.query;
+      closeRecentSearches();
+      await search();
+    });
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "recent-search-delete";
+    remove.textContent = "\u00d7";
+    remove.title = `刪除 ${entry.setNumber} 的查詢紀錄`;
+    remove.setAttribute("aria-label", remove.title);
+    remove.addEventListener("click", () => deleteRecentSearch(entry.setNumber));
+    row.append(select, remove);
+    return row;
   });
-  const placeholder = document.createElement("option");
-  placeholder.value = "";
-  placeholder.textContent = `\u6700\u8fd1 ${options.length || 20} \u7b46\u67e5\u8a62`;
-  recentSearchesSelect.replaceChildren(placeholder, ...options);
+  recentSearchesMenu.replaceChildren(...rows);
+}
+
+function closeRecentSearches() {
+  recentSearchesToggle.setAttribute("aria-expanded", "false");
+  recentSearchesMenu.hidden = true;
+}
+
+async function deleteRecentSearch(setNumber) {
+  try {
+    const params = new URLSearchParams({ setNumber });
+    const response = await fetch(`/api/history?${params}`, { method: "DELETE" });
+
+    if (!response.ok) {
+      const body = await response.json();
+      throw new Error(body.error || "無法刪除查詢紀錄。");
+    }
+
+    await refreshHistory();
+    closeRecentSearches();
+  } catch (error) {
+    alertsNode.hidden = false;
+    alertsNode.textContent = error.message;
+  }
 }
 
 function renderHistory() {

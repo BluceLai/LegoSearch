@@ -116,7 +116,82 @@ h1 {
 }
 
 .recent-searches {
+  position: relative;
   color: var(--muted);
+}
+
+.recent-searches-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 13px;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  background: #fff;
+  font-weight: 400;
+  text-align: left;
+}
+
+.recent-searches-toggle::after {
+  content: "\2304";
+  font-size: 1.2rem;
+}
+
+.recent-searches-toggle:disabled {
+  color: var(--muted);
+  cursor: default;
+}
+
+.recent-searches-menu {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + 4px);
+  width: 100%;
+  max-height: 280px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+  box-shadow: 0 10px 24px rgba(23, 25, 31, 0.14);
+}
+
+.recent-search-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 42px;
+  border-bottom: 1px solid var(--line);
+}
+
+.recent-search-row:last-child {
+  border-bottom: 0;
+}
+
+.recent-search-select,
+.recent-search-delete {
+  min-height: 40px;
+  border-radius: 0;
+  color: var(--ink);
+  background: transparent;
+  font-weight: 500;
+}
+
+.recent-search-select {
+  padding: 0 13px;
+  text-align: left;
+}
+
+.recent-search-select:hover,
+.recent-search-delete:hover {
+  background: var(--surface);
+  filter: none;
+}
+
+.recent-search-delete {
+  border-left: 1px solid var(--line);
+  color: var(--red);
+  font-size: 1.4rem;
+  line-height: 1;
 }
 
 .field input:focus,
