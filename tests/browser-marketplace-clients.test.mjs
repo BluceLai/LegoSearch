@@ -165,6 +165,41 @@ test("uses the matching browser client when a direct Coupang request is blocked"
   assert.deepEqual(results, ["browser product"]);
 });
 
+test("uses direct iOPEN Mall HTML results before the browser fallback", async () => {
+  let browserCalls = 0;
+  const clients = createMarketplaceClients({
+    fetchImpl: async () => ({
+      ok: true,
+      async text() {
+        return `
+          <script type="application/ld+json">
+            {"@type":"Product","name":"Bon樂高 LEGO 71053 梅林","offers":{"price":"119","url":"/050342/index.php?action=product_detail&prod_no=P5034218941535"}}
+          </script>
+        `;
+      }
+    }),
+    browserClients: {
+      iopen: async () => {
+        browserCalls += 1;
+        return ["browser product"];
+      }
+    }
+  });
+
+  const results = await clients.iopen({
+    query: "LEGO 71053",
+    platform: getPlatform("iopen"),
+    searchedAt: "2026-09-22T00:00:00.000Z"
+  });
+
+  assert.equal(browserCalls, 0);
+  assert.deepEqual(results.map((result) => [result.title, result.price, result.source]), [[
+    "Bon樂高 LEGO 71053 梅林",
+    119,
+    "marketplace"
+  ]]);
+});
+
 function browserContextThatEvaluatesPageFunction() {
   return {
     async newPage() {

@@ -2,7 +2,7 @@ import { createMarketplaceResult } from "../domain/search-result.mjs";
 
 export function createMarketplaceClients({ fetchImpl = fetch, browserClients = {} } = {}) {
   const directClients = {
-    iopen: browserClients.iopen || createHtmlClient(fetchImpl),
+    iopen: createHtmlClient(fetchImpl),
     momo: createHtmlClient(fetchImpl),
     coupang: createHtmlClient(fetchImpl),
     pchome: createPchomeClient(fetchImpl)
