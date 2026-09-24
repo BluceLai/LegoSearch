@@ -197,8 +197,9 @@ function extractCoupangCandidates() {
   const seen = new Set();
 
   return [...document.querySelectorAll('a[href*="/products/"]')].map((link) => {
+    const productName = link.querySelector('[class*="productName"]');
     const image = link.querySelector("img");
-    const title = cleanText(image?.alt || link.getAttribute("aria-label") || link.textContent);
+    const title = cleanText(productName?.textContent || image?.alt || link.getAttribute("aria-label") || link.textContent);
     const url = link.getAttribute("href") || "";
     const key = title + ":" + url;
 

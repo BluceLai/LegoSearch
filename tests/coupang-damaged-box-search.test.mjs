@@ -185,6 +185,54 @@ test("uses the candidate item link to open its offer list directly", async () =>
   assert.equal(result.damagedPrice, 1673);
 });
 
+test("uses the product-name element instead of a Coupang cashback badge", async () => {
+  const productTitle = "LEGO 43020 FIFA世界盃官方獎盃 運動主題 1套";
+  const candidateLink = {
+    textContent: "$159 酷澎幣回饋",
+    querySelector(selector) {
+      if (selector === '[class*="productName"]') {
+        return { textContent: productTitle };
+      }
+
+      if (selector === "img") {
+        return {
+          alt: "$159 酷澎幣回饋",
+          currentSrc: "",
+          src: "https://image.example/cashback.png"
+        };
+      }
+
+      return null;
+    },
+    getAttribute(name) {
+      return name === "href"
+        ? "/products/LEGO-43020-658164420575274?itemId=658164420476971&vendorItemId=658164420476944"
+        : null;
+    }
+  };
+  const pages = [
+    pageThatEvaluatesWithDocument({
+      querySelectorAll(selector) {
+        return selector === 'a[href*="/products/"]' ? [candidateLink] : [];
+      }
+    }),
+    pageThatEvaluates({ normalPrice: 5099, damagedPrice: 4640, listPrice: 6399 })
+  ];
+  const search = createCoupangDamagedBoxSearcher({
+    schedule: (work) => work(),
+    createContext: async () => ({
+      async newPage() {
+        return pages.shift();
+      },
+      async close() {}
+    })
+  });
+
+  const [result] = await search({ query: "LEGO" });
+
+  assert.equal(result.title, productTitle);
+});
+
 function pageThatEvaluates(result, navigatedUrls = null) {
   return {
     async goto(url) {
@@ -194,6 +242,18 @@ function pageThatEvaluates(result, navigatedUrls = null) {
     async waitForSelector() {},
     async evaluate() {
       return result;
+    },
+    async close() {}
+  };
+}
+
+function pageThatEvaluatesWithDocument(document) {
+  return {
+    async goto() {},
+    async route() {},
+    async waitForSelector() {},
+    async evaluate(pageFunction) {
+      return Function("document", "return (" + pageFunction.toString() + ")();")(document);
     },
     async close() {}
   };
